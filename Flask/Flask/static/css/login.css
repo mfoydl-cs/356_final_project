@@ -1,18 +1,22 @@
-body {font-family: Arial, Helvetica, sans-serif;}
-form {border: 3px solid #f1f1f1;}
+body {font-family: Arial, Helvetica, sans-serif; background-color: aqua; margin: 0;}
+form {border: 3px solid #e1e1e1;}
 #content{
-    margin: 100,100,100,100;
-    width: 100%;
+    margin-left: 10%;
+    margin-right: 10%;
+    padding-top: 5%;
+    width: 80%;
     height: 100%;
     text-align: center;
-    
+    background-color: white;
+    border-left: 3px solid #b1b1b1;
+    border-right: 3px solid #b1b1b1;
 }
 input[type=text], input[type=password], input[type=email] {
     width: 100%;
     padding: 12px 20px;
     margin: 8px 0;
     display: inline-block;
-    border: 1px solid #ccc;
+    border: 1px solid #bbb;
     box-sizing: border-box;
 }
   

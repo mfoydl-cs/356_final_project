@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <title>Verfiy Email</title>
+        <link rel="stylesheet" href="../static/css/login.css">
+    </head>
+    <body>
+        <div id="content">
+            <h1>Email Verification</h1>
+            <div id="loginCon">
+                <form method="POST" action="/verify">
+                    <div class="container" style="text-align: center">
+                        <p>Check your inbox for an email from us, and click the link or enter the key manually to verify your email</p>
+                    </div>
+                    <div class="container">
+                        <label for="email"><b>Email</b></label>
+                        <input type="email" name="email" placeholder="Enter Email" required>
+                        <label for="key"><b>Key</b></label>
+                        <input type="text" name="key" placeholder="Enter Key" required>
+                    </div>
+                    <div class="container">
+                        <input type="submit" value="Verify">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>
