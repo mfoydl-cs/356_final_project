@@ -13,8 +13,7 @@ body{
     height: 100%;
     width: 19%;
     float: left;
-    position: sticky;
-    top: 0;
+    
 }
 #center{
     margin-left: 1;
@@ -31,6 +30,9 @@ body{
 #menu{
     margin-left: 60;
     text-align: center;
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
 }
 .menu_element{
     padding: 1%;
