@@ -10,6 +10,11 @@ from flask_jwt_extended import (
 )
 
 app = Flask(__name__)
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_REFRESH_COOKIE_PATH'] = '/token/refresh'
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+app.config['JWT_SECRET_KEY'] = 'super-secret'
+jwt = JWTManager(app)
 app.register_blueprint(user_api)
 
 @app.route("/")
