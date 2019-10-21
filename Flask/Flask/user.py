@@ -5,7 +5,7 @@ from flask_jwt_extended import (
 	JWTManager, jwt_required, create_access_token,
     jwt_refresh_token_required, create_refresh_token,
     get_jwt_identity, set_access_cookies,
-    set_refresh_cookies, unset_jwt_cookies
+    set_refresh_cookies, unset_jwt_cookies, jwt_optional
 )
 
 user_api = Blueprint('user_api','user_api')
@@ -16,13 +16,13 @@ def createuser():
 
 @user_api.route("/adduser",methods=['POST'])
 def addusr():
-    name= request.json.get('username', None)
+	name= request.json.get('username', None)
 	password= request.json.get('password', None)
 	email= request.json.get('email', None)
 
 	client = MongoClient()
 	db= client.users
-    '''
+	'''
 	json= {"username":name,"password":password,"email":email,"verified":"false"}
 	uid = db.users.insert_one(json)
 	json2= {"email":email,"key":str(uid)}
@@ -35,7 +35,7 @@ def addusr():
 	mail.send(msg)
 	json_user = {"username":name,"human":"0","wopr":"0","tie":"0","current":"0","games":[],"gamesinfo":[]}
 	db.info.insert_one(json_user)
-    '''
+	'''
 	return jsonify({"status":"OK"})
 
 @user_api.route("/unverified")
