@@ -1,0 +1,197 @@
+<html>
+    <head>
+        <title>NAFT</title>
+        <link rel="stylesheet" href="../static/css/main.css">
+        <link rel="stylesheet" href="../static/css/like.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script type="text/javascript" src="../static/js/main.js"></script>
+    </head>
+    <body>
+        <div id="main_center">
+        <div id="content">
+            <div id="leftbar">
+               <div id="menu">
+                   <div class="menu_element">
+                        <h3><a href="/home">Home</a></h3>
+                   </div>
+                   <div class="menu_element">
+                        <h3>Profile</h3>
+                   </div>
+                   <div class="menu_element">
+                       <h3><a href="/logout">Logout</a></h3>
+                   </div>
+               </div> 
+            </div>
+
+            <div id="center">
+                <div id="post_form" class="container">
+                    <form method="POST" action="/additem">
+                        <div>
+                                <textarea id="post_text" placeholder="Share Here!" maxlength="200"></textarea>
+                        </div>
+                        <div id="post_tools">
+                            <p id="count" style="float: left; margin: 0"></p>
+                            <input type="submit" value="Post" style="float: right">
+                        </div>
+                    </form>
+                </div>
+                <div id="feed">
+                    <div class="post container">
+                        <div class="post_head">
+                            <span style="color:darkgray"> Alex Reposted</span>
+                            <br>
+                            <span style="font-weight: bold">@Miles_Foydl</span>
+                            <span style="color: darkgray"> - 8h</span>
+                        </div>
+                        <div class="post_body">
+                            <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                        </div>
+                        <div class="post_footer">
+                            <div><button class="button button-post button-comment" ><div class="comment"></div></button></div>
+                            <div><button class="button button-post button-repost"><span>&#x21ba;</span></button></div>
+                            <div><button class="button button-post button-like"><span class="heart"></span></button></div>
+                        </div>
+                    </div>
+                    <div class="post container">
+                            <div class="post_head">
+                                <span style="color:darkgray"> Alex Reposted</span>
+                                <br>
+                                <span style="font-weight: bold">@Miles_Foydl</span>
+                                <span style="color: darkgray"> - 8h</span>
+                            </div>
+                            <div class="post_body">
+                                <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                            </div>
+                            <div class="post_footer">
+                                <div><button class="button button-post button-comment" ><div class="comment"></div></button></div>
+                                <div><button class="button button-post button-repost">&#x21ba;</button></div>
+                                <div><button class="button button-post button-like"><span class="heart"></span></button></div>
+                            </div>
+                        </div>
+                        <div class="post container">
+                                <div class="post_head">
+                                    <span style="color:darkgray"> Alex Reposted</span>
+                                    <br>
+                                    <span style="font-weight: bold">@Miles_Foydl</span>
+                                    <span style="color: darkgray"> - 8h</span>
+                                </div>
+                                <div class="post_body">
+                                    <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                                </div>
+                                <div class="post_footer">
+                                    <div><input type="button" value="Comment"></div>
+                                    <div><input type="button" value="Repost"></div>
+                                    <div><input type="button" value="Like"></div>
+                                </div>
+                            </div>
+                            <div class="post container">
+                                    <div class="post_head">
+                                        <span style="color:darkgray"> Alex Reposted</span>
+                                        <br>
+                                        <span style="font-weight: bold">@Miles_Foydl</span>
+                                        <span style="color: darkgray"> - 8h</span>
+                                    </div>
+                                    <div class="post_body">
+                                        <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                                    </div>
+                                    <div class="post_footer">
+                                        <div><input type="button" value="Comment"></div>
+                                        <div><input type="button" value="Repost"></div>
+                                        <div><input type="button" value="Like"></div>
+                                    </div>
+                                </div>
+                                <div class="post container">
+                                        <div class="post_head">
+                                            <span style="color:darkgray"> Alex Reposted</span>
+                                            <br>
+                                            <span style="font-weight: bold">@Miles_Foydl</span>
+                                            <span style="color: darkgray"> - 8h</span>
+                                        </div>
+                                        <div class="post_body">
+                                            <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                                        </div>
+                                        <div class="post_footer">
+                                            <div><input type="button" value="Comment"></div>
+                                            <div><input type="button" value="Repost"></div>
+                                            <div><input type="button" value="Like"></div>
+                                        </div>
+                                    </div>
+                                    <div class="post container">
+                                            <div class="post_head">
+                                                <span style="color:darkgray"> Alex Reposted</span>
+                                                <br>
+                                                <span style="font-weight: bold">@Miles_Foydl</span>
+                                                <span style="color: darkgray"> - 8h</span>
+                                            </div>
+                                            <div class="post_body">
+                                                <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                                            </div>
+                                            <div class="post_footer">
+                                                <div><input type="button" value="Comment"></div>
+                                                <div><input type="button" value="Repost"></div>
+                                                <div><input type="button" value="Like"></div>
+                                            </div>
+                                        </div>
+                                        <div class="post container">
+                                                <div class="post_head">
+                                                    <span style="color:darkgray"> Alex Reposted</span>
+                                                    <br>
+                                                    <span style="font-weight: bold">@Miles_Foydl</span>
+                                                    <span style="color: darkgray"> - 8h</span>
+                                                </div>
+                                                <div class="post_body">
+                                                    <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                                                </div>
+                                                <div class="post_footer">
+                                                    <div><input type="button" value="Comment"></div>
+                                                    <div><input type="button" value="Repost"></div>
+                                                    <div><input type="button" value="Like"></div>
+                                                </div>
+                                            </div>
+                                            <div class="post container">
+                                                    <div class="post_head">
+                                                        <span style="color:darkgray"> Alex Reposted</span>
+                                                        <br>
+                                                        <span style="font-weight: bold">@Miles_Foydl</span>
+                                                        <span style="color: darkgray"> - 8h</span>
+                                                    </div>
+                                                    <div class="post_body">
+                                                        <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                                                    </div>
+                                                    <div class="post_footer">
+                                                        <div><input type="button" value="Comment"></div>
+                                                        <div><input type="button" value="Repost"></div>
+                                                        <div><input type="button" value="Like"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="post container">
+                                                        <div class="post_head">
+                                                            <span style="color:darkgray"> Alex Reposted</span>
+                                                            <br>
+                                                            <span style="font-weight: bold">@Miles_Foydl</span>
+                                                            <span style="color: darkgray"> - 8h</span>
+                                                        </div>
+                                                        <div class="post_body">
+                                                            <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
+                                                        </div>
+                                                        <div class="post_footer">
+                                                            <div><input type="button" value="Comment"></div>
+                                                            <div><input type="button" value="Repost"></div>
+                                                            <div><input type="button" value="Like"></div>
+                                                        </div>
+                                                    </div>
+                </div>
+            </div>
+
+            <div id="rightbar">
+                <div>
+                    <form method="POST" action="/search">
+                        <input type="search" name="search" placeholder="Search..." id="searchbar">
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
+    </body>
+    
+</html>

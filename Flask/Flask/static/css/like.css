@@ -1,0 +1,119 @@
+
+.button-post {
+    border: 2px solid #8a8a8a;
+    background-color: transparent;
+    text-decoration: none;
+    position: relative;
+    vertical-align: middle;
+    text-align: center;
+    display: inline-block;
+    border-radius: 3rem;
+    color: white;
+    transition: all ease 0.4s;
+    padding: 10;
+  }
+
+
+  .button-repost {
+      padding-left:10;
+      padding-right:10;
+      padding-top:7;
+      padding-bottom:7;
+      color: #8a8a8a;
+      border-color: #8a8a8a;
+      font-size: 15;
+      font-weight: bolder;
+      transition: all ease 0.4s;
+  }
+  .repost{
+      color: green;
+      border-color: green;
+  }
+  .button-repost:hover{
+    border-color: green;
+    background: lightgreen;
+    color: green;
+  }
+
+.button-like{
+    padding-top:14;
+}
+  .button-like span {
+    transition: all ease 0.4s;
+  }
+
+  .button-like:hover {
+    border-color: #cc4b37;
+    background-color: lightpink;
+  }
+
+  .liked {
+      border-color: #cc4b37;
+  }
+
+  .heart {
+    background-color: #8a8a8a;
+    display: inline-block;
+    height: 10px;
+    margin: 0 3px;
+    position: relative;
+    top: 0;
+    transform: rotate(-45deg);
+    width: 10px;
+  }
+  
+  .heart:before,
+  .heart:after {
+    content: "";
+    background-color: #8a8a8a;
+    border-radius: 50%;
+    height: 10px;
+    position: absolute;
+    width: 10px;
+  }
+  
+  .heart:before {
+    top: -5px;
+    left: 0;
+  }
+  
+  .heart:after {
+    left: 5px;
+    top: 0;
+  }
+
+  .liked .heart{
+    background-color: red;
+  }
+  .liked .heart:before,
+  .liked .heart:after {
+    background-color: red;
+  }
+
+  .comment {
+	position: relative;
+	background: #8a8a8a;
+    border-radius: .4em;
+    padding:7;
+}
+
+.comment:after {
+	content: '';
+    position: absolute;
+    bottom: 16;
+    left: 14;
+    border: 5px solid transparent;
+    border-top-color: #8a8a8a;
+    border-bottom: 0;
+    border-left: 0;
+    margin-left: -10px;
+    margin-bottom: -20px;
+}
+.button-comment{
+    padding-top:10;
+}
+.button-comment:hover{
+    border-color: rgb(79, 79, 255);
+    background: lightskyblue;
+}
+  
