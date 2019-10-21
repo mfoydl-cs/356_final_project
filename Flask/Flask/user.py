@@ -10,29 +10,27 @@ from flask_jwt_extended import (
 
 user_api = Blueprint('user_api','user_api')
 
-@app.route("/adduser",methods=['POST'])
+@user_api.route("/adduser",methods=['POST'])
 def addusr():
     return "addusr"
 
-@app.route("/unverified")
+@user_api.route("/unverified")
 def unverified():
 	return render_template("unverified.html")
 
-@app.route("/verify",methods=['POST','GET'])
+@user_api.route("/verify",methods=['POST','GET'])
 def verify():
     return "verify"
 
-	
-
-@app.route("/login",methods=["POST"])
+@user_api.route("/login",methods=["POST"])
 def login():
     return 'login'  
 
-@app.route('/token/refresh', methods=['POST'])
+@user_api.route('/token/refresh', methods=['POST'])
 #@jwt_refresh_token_required
 def refresh():
     return "refresh"
 
-@app.route("/logout",methods=["POST"])
+@user_api.route("/logout",methods=["POST"])
 def logout():
     return "logout"
