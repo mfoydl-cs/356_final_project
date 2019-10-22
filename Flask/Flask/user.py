@@ -63,25 +63,25 @@ def unverified():
 @user_api.route("/verify",methods=['POST','GET'])
 def verify():
     try:
-	email=""
-	key=""
-	if request.method == "POST":
-	    email= request.form["email"]
-	    key= request.form["key"]
-	elif request.method =="GET":
-	    email= request.args.get("email")
-	    key=request.args.get("key")
+	    email=""
+	    key=""
+	    if request.method == "POST":
+	        email= request.form["email"]
+	        key= request.form["key"]
+	    elif request.method =="GET":
+	        email= request.args.get("email")
+	        key=request.args.get("key")
 
-	client= MongoClient()
-	db = client.naft
+	    client= MongoClient()
+	    db = client.naft
 
-	vuser= db.verified.find({"email":email})
-	if vuser[0]['key']==key or key=="abracadabra":
-	    db.users.update_one({"email":email},{"$set":{"verified":"true"}})
+	    vuser= db.verified.find({"email":email})
+	    if vuser[0]['key']==key or key=="abracadabra":
+	        db.users.update_one({"email":email},{"$set":{"verified":"true"}})
             return jsonify({"status":"OK"})
-	return jsonify({"status":"ERROR"})
+	    return jsonify({"status":"ERROR"})
     except Exception, e:
-	return jsonify({"status":"ERROR","error":str(e)})
+	    return jsonify({"status":"ERROR","error":str(e)})
 
 @user_api.route("/login",methods=["POST"])
 def login():
@@ -94,13 +94,13 @@ def login():
 		db = client.naft
 		users = db.users.find({"username":username})
 
-        	if users[0] is None:
-            		return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
+        if users[0] is None:
+            return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
 		if(users[0]['verified'] == "false"):
-	    		return jsonify({"status":"ERROR","error":"You have not verified your account"})
+	    	return jsonify({"status":"ERROR","error":"You have not verified your account"})
 
 		if not check_password_hash(users[0]['password'],password):
-            		return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
+            return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
 
 		access_token = create_access_token(identity=username)
 		refresh_token = create_refresh_token(identity=username)
