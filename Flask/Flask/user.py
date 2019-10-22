@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, request, jsonify, redirect, json, Blueprint
+from flask import Flask, render_template, url_for, request, jsonify, redirect, json, Blueprint, make_response
 from pymongo import MongoClient
 from flask_mail import Mail, Message
 from werkzeug import generate_password_hash, check_password_hash
@@ -17,13 +17,13 @@ def createuser():
 
 @user_api.route("/adduser",methods=['POST'])
 def addusr():
-	try:
-        name= request.json.get('username', None)
+    try:
+        name= request.form["username"]
 
-        password= request.json.get('password', None)
+        password= request.form["password"]
         hashed_password= generate_password_hash(password)
 
-        email= request.json.get('email', None)
+        email= request.form["email"]
 
         client = MongoClient()
         db= client.naft
@@ -32,11 +32,11 @@ def addusr():
             "username":name,
             "email":email,
             "password":hashed_password,
-            "posts":[]
-            "likes":[]
-            "reposts":[]
-            "following":[]
-            "followers":[]
+            "posts":[],
+            "likes":[],
+            "reposts":[],
+            "following":[],
+            "followers":[],
             "verified":"false"
             }
         #Add new user to database
@@ -52,9 +52,9 @@ def addusr():
         #mail.send(msg)
 
         # redirect to verification page and return status: OK
-        return make_response(render_template('unverified.html'),jsonify({"status":"OK"}))
+        return make_response(url_for('unverified.html'),200)
     except Exception, e:
-        return jsonify{"status":"ERROR","error":str(e)} # return status: ERROR if there is an exception
+        return jsonify({"status":"ERROR","error":str(e)}) # return status: ERROR if there is an exception
 
 @user_api.route("/unverified")
 def unverified():
@@ -63,44 +63,44 @@ def unverified():
 @user_api.route("/verify",methods=['POST','GET'])
 def verify():
     try:
-		email=""
-		key=""
-		if request.method == "POST":
-			email= request.json.get("email", None)
-			key= request.json.get("key", None)
-		elif request.method =="GET":
-			email= request.args.get("email")
-			key=request.args.get("key")
+	email=""
+	key=""
+	if request.method == "POST":
+	    email= request.form["email"]
+	    key= request.form["key"]
+	elif request.method =="GET":
+	    email= request.args.get("email")
+	    key=request.args.get("key")
 
-		client= MongoClient()
-		db = client.naft
+	client= MongoClient()
+	db = client.naft
 
-		vuser= db.verified.find({"email":email})
-		if vuser[0]['key']==key or key=="abracadabra":
-			db.users.update_one({"email":email},{"$set":{"verified":"true"}})
-            jsonify({"status":"OK"})
-		return jsonify({"status":"ERROR"})
-	except Exception, e:
-		return jsonify({"status":"ERROR","error":str(e)})
+	vuser= db.verified.find({"email":email})
+	if vuser[0]['key']==key or key=="abracadabra":
+	    db.users.update_one({"email":email},{"$set":{"verified":"true"}})
+            return jsonify({"status":"OK"})
+	return jsonify({"status":"ERROR"})
+    except Exception, e:
+	return jsonify({"status":"ERROR","error":str(e)})
 
 @user_api.route("/login",methods=["POST"])
 def login():
     #check_password_hash(saved,input)
-    try:
-		username = request.json.get('username', None)
-		password = request.json.get('password', None)
+	try:
+		username = request.form["username"]
+		password = request.form["password"]
 
 		client = MongoClient()
 		db = client.naft
 		users = db.users.find({"username":username})
 
-        if users[0] is None:
-            return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
+        	if users[0] is None:
+            		return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
 		if(users[0]['verified'] == "false"):
-			return jsonify({"status":"ERROR","error":"You have not verified your account"})
-			
-        if not check_password_hash(users[0]['password'],password):
-            return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
+	    		return jsonify({"status":"ERROR","error":"You have not verified your account"})
+
+		if not check_password_hash(users[0]['password'],password):
+            		return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
 
 		access_token = create_access_token(identity=username)
 		refresh_token = create_refresh_token(identity=username)
@@ -112,7 +112,7 @@ def login():
 	except Exception, e:
 		return jsonify({"status":"ERROR", "error":str(e)})
 
-@app.route('/token/refresh', methods=['POST'])
+@user_api.route('/token/refresh', methods=['POST'])
 @jwt_refresh_token_required
 def refresh():
     try:
@@ -125,7 +125,7 @@ def refresh():
     except Exception, e:
 		return jsonify({"status":"ERROR","error":str(e)})
 
-@app.route("/logout",methods=["POST"])
+@user_api.route("/logout",methods=["POST"])
 def logout():
 	try:
 		resp = jsonify({"status":"OK"})
