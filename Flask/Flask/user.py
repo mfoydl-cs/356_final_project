@@ -14,7 +14,7 @@ user_api = Blueprint('user_api','user_api')
 @user_api.route("/createuser",methods=['GET'])
 def createuser():
     return render_template('createuser.html')
-
+'''
 @user_api.route("/adduser",methods=['POST'])
 def addusr():
     try:
@@ -49,13 +49,13 @@ def addusr():
         url="http://cowzilla.cse356.compas.cs.stonybrook.edu/verify?email={}&key={}".format(email,str(uid.inserted_id))
         body="Please verify you email with this code:\n "+key+url
         msg= Message(subject="Verify Email",body=body,sender="ubuntu@wu1.cloud.compas.cs",recipients=[email])
-        #mail.send(msg)
+        mail.send(msg)
 
         # redirect to verification page and return status: OK
-        return make_response(url_for('unverified.html'),200)
+        return jsonify({"status","OK"})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)}) # return status: ERROR if there is an exception
-
+'''
 @user_api.route("/unverified")
 def unverified():
 	return render_template("unverified.html")
@@ -66,8 +66,8 @@ def verify():
 	    email=""
 	    key=""
 	    if request.method == "POST":
-	        email= request.form["email"]
-	        key= request.form["key"]
+	        email= request.json.get("email",None)
+	        key= request.json.get("key",None)
 	    elif request.method =="GET":
 	        email= request.args.get("email")
 	        key=request.args.get("key")
@@ -87,20 +87,20 @@ def verify():
 def login():
     #check_password_hash(saved,input)
     try:
-	username = request.form["username"]
-	password = request.form["password"]
+	username = request.json.get("username",None)
+	password = request.json.get("password",None)
 
 	client = MongoClient()
 	db = client.naft
 	users = db.users.find({"username":username})
 
         if users[0] is None:
-            return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
+            return jsonify({"status":"ERROR"})
 	if(users[0]['verified'] == "false"):
-	    	return jsonify({"status":"ERROR","error":"You have not verified your account"})
+	    	return jsonify({"status":"ERROR"})
 
 	if not check_password_hash(users[0]['password'],password):
-            return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
+            return jsonify({"status":"ERROR"})
 
 	access_token = create_access_token(identity=username)
 	refresh_token = create_refresh_token(identity=username)
