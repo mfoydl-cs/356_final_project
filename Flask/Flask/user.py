@@ -78,7 +78,7 @@ def verify():
 		vuser= db.verified.find({"email":email})
 		if vuser[0]['key']==key or key=="abracadabra":
 			db.users.update_one({"email":email},{"$set":{"verified":"true"}})
-			return jsonify({"status":"OK"})
+            jsonify({"status":"OK"})
 		return jsonify({"status":"ERROR"})
 	except Exception, e:
 		return jsonify({"status":"ERROR","error":str(e)})
