@@ -1,23 +1,25 @@
 $(document).ready(function(){
-    $("#login").bind("click", function(e){
-        var username= $("#username").val(); 
-        var password=$("#password").val();
+    console.log(window.location.href)
+    $("#submit").bind("click", function(e){
+        var key= $("#key").val(); 
+        var email= $("#email").val();
         $.ajax({
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
-                "username":username,
-                "password":password
+                "email":email,
+                "key":key
             }),
             dataType: "json",
-            url: "/login",
+            url: "/verify",
             success: function(response){
                 if(response.status=="OK"){
-                    window.location.replace("/")
+                    window.location.replace("/");
                 }
                 else{
                     console.log(response);
                 }
+                
             },
             error: function(e){
                 console.log("Error: "+e);

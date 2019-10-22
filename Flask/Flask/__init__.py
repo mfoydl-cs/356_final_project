@@ -56,9 +56,9 @@ def additem():
 @app.route("/adduser",methods=['POST'])
 def addusr():
     try:
-	    name=request.json.get("username",None)
-	    password=request.json.get("password",None)
-	    email=request.json.get("email",None)
+	name=request.json.get("username",None)
+	password=request.json.get("password",None)
+	email=request.json.get("email",None)
 
         hashed_password= generate_password_hash(password)
 
@@ -86,9 +86,20 @@ def addusr():
         url="http://cowzilla.cse356.compas.cs.stonybrook.edu/verify?email={}&key={}".format(email,str(uid.inserted_id))
         body="Please verify you email with this code:\n "+key+url
         msg= Message(subject="Verify Email",body=body,sender="ubuntu@wu1.cloud.compas.cs",recipients=[email])
-        #mail.send(msg)
+        mail.send(msg)
 
         # redirect to verification page and return status: OK
         return jsonify({"status":"OK"})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)}) # return status: ERROR if there is an exception
+
+@app.route("/reset",methods=["GET"])
+def reset():
+    client = MongoClient()
+    db= client.naft
+
+    db.users.drop()
+    db.verified.drop()
+    db.items.drop()
+    return "All tables reset"
+

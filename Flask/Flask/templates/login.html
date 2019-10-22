@@ -2,26 +2,25 @@
     <head>
         <title>Create Account</title>
         <link rel="stylesheet" href="../static/css/login.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script type="text/javascript" src="../static/js/login.js"></script>
     </head>
     <body>
         <div id="content">
             <h1>Login</h1>
             <div id="loginCon">
-                <form method="POST" action="/login">
                     <div class="container">
                         <label for="username"><b>Username:</b></label>
-                        <input type="text" name="username" placeholder="Enter Username" required>
+                        <input type="text" name="username" placeholder="Enter Username" id="username" required>
                         
                         <label for="password"><b>Password:</b></label>
-                        <input type="password" name="password" placeholder="Enter Password" required>
+                        <input type="password" name="password" placeholder="Enter Password" id="password" required>
                     </div>
                     <div class="container">
-                        <input type="submit" value="Login">
+                        <input type="submit" value="Login" id="login">
                     </div>
-                    
-                </form>
-                <a href="/createuser">No Account? Create one.</a>
             </div>
+            <a href="/createuser">No Account? Create one.</a>
         </div>
     </body>
 </html>

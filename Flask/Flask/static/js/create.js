@@ -1,4 +1,5 @@
 $(document).ready(function(){
+    console.log(window.location.href)
     $("#create").bind("click", function(e){
         var username= $("#username").val(); 
         var email= $("#email").val();
@@ -12,8 +13,14 @@ $(document).ready(function(){
                 "password":password
             }),
             dataType: "json",
+            url: "/adduser",
             success: function(response){
-                url: window.location.hostname + "/unverified"
+                if(response.status=="OK"){
+                    window.location.replace("/unverified")
+                }
+                else{
+                    console.log(response);
+                }
             },
             error: function(e){
                 console.log("Error: "+e);

@@ -14,48 +14,7 @@ user_api = Blueprint('user_api','user_api')
 @user_api.route("/createuser",methods=['GET'])
 def createuser():
     return render_template('createuser.html')
-'''
-@user_api.route("/adduser",methods=['POST'])
-def addusr():
-    try:
-        name= request.form["username"]
 
-        password= request.form["password"]
-        hashed_password= generate_password_hash(password)
-
-        email= request.form["email"]
-
-        client = MongoClient()
-        db= client.naft
-
-        json={
-            "username":name,
-            "email":email,
-            "password":hashed_password,
-            "posts":[],
-            "likes":[],
-            "reposts":[],
-            "following":[],
-            "followers":[],
-            "verified":"false"
-            }
-        #Add new user to database
-        uid = db.users.insert_one(json)
-        json2= {"email":email,"key":str(uid.inserted_id)}
-        db.verified.insert_one(json2)
-
-        # send verification email
-        key= "validation key: <"+str(uid.inserted_id)+">\n"
-        url="http://cowzilla.cse356.compas.cs.stonybrook.edu/verify?email={}&key={}".format(email,str(uid.inserted_id))
-        body="Please verify you email with this code:\n "+key+url
-        msg= Message(subject="Verify Email",body=body,sender="ubuntu@wu1.cloud.compas.cs",recipients=[email])
-        mail.send(msg)
-
-        # redirect to verification page and return status: OK
-        return jsonify({"status","OK"})
-    except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)}) # return status: ERROR if there is an exception
-'''
 @user_api.route("/unverified")
 def unverified():
 	return render_template("unverified.html")
@@ -94,13 +53,13 @@ def login():
 	db = client.naft
 	users = db.users.find({"username":username})
 
-    if users[0] is None:
-        return jsonify({"status":"ERROR"})
-	if(users[0]['verified'] == "false"):
-	    return jsonify({"status":"ERROR"})
+        if users[0] is None:
+            return jsonify({"status":"ERROR","error":"User not found"})
+        if(users[0]['verified'] == "false"):
+	    return jsonify({"status":"ERROR","error":"Email has not been verified"})
 
 	if not check_password_hash(users[0]['password'],password):
-        return jsonify({"status":"ERROR"})
+            return jsonify({"status":"ERROR","error":"Username/Password incorrect"})
 
 	access_token = create_access_token(identity=username)
 	refresh_token = create_refresh_token(identity=username)
