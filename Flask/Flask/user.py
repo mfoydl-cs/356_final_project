@@ -94,13 +94,13 @@ def login():
 	db = client.naft
 	users = db.users.find({"username":username})
 
-        if users[0] is None:
-            return jsonify({"status":"ERROR"})
+    if users[0] is None:
+        return jsonify({"status":"ERROR"})
 	if(users[0]['verified'] == "false"):
-	    	return jsonify({"status":"ERROR"})
+	    return jsonify({"status":"ERROR"})
 
 	if not check_password_hash(users[0]['password'],password):
-            return jsonify({"status":"ERROR"})
+        return jsonify({"status":"ERROR"})
 
 	access_token = create_access_token(identity=username)
 	refresh_token = create_refresh_token(identity=username)

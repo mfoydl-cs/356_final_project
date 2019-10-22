@@ -56,9 +56,9 @@ def additem():
 @app.route("/adduser",methods=['POST'])
 def addusr():
     try:
-	name=request.json.get("username",None)
-	password=request.json.get("password",None)
-	email=request.json.get("email",None)
+	    name=request.json.get("username",None)
+	    password=request.json.get("password",None)
+	    email=request.json.get("email",None)
 
         hashed_password= generate_password_hash(password)
 

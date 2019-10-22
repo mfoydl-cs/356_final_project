@@ -2,24 +2,25 @@
     <head>
         <title>Create Account</title>
         <link rel="stylesheet" href="../static/css/login.css">
+        <script type="text/javascript" src="../static/js/create.js"></script>
     </head>
     <body>
         <div id="content">
             <h1>Create Account</h1>
             <div id="loginCon">
-                <form method="POST" action="/adduser">
+                <form>
                     <div class="container">
                         <label for="username"><b>Username:</b></label>
-                        <input type="text" name="username" placeholder="Enter Username" required>
+                        <input type="text" name="username" placeholder="Enter Username" id="username" required>
 
                         <label for="email"><b>Email:</b></label>
-                        <input type="email" name="email" placeholder="Enter Email" required>
+                        <input type="email" name="email" placeholder="Enter Email" id="email" required>
                         
                         <label for="password"><b>Password:</b></label>
-                        <input type="password" name="password" placeholder="Enter Password" required>
+                        <input type="password" name="password" placeholder="Enter Password" id="password" required>
                     </div>
                     <div class="container">
-                        <input type="submit" value="Submit">
+                        <input type="submit" value="Submit" id="create">
                     </div>
                     
                 </form>
