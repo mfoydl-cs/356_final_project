@@ -86,31 +86,31 @@ def verify():
 @user_api.route("/login",methods=["POST"])
 def login():
     #check_password_hash(saved,input)
-	try:
-		username = request.form["username"]
-		password = request.form["password"]
+    try:
+	username = request.form["username"]
+	password = request.form["password"]
 
-		client = MongoClient()
-		db = client.naft
-		users = db.users.find({"username":username})
+	client = MongoClient()
+	db = client.naft
+	users = db.users.find({"username":username})
 
         if users[0] is None:
             return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
-		if(users[0]['verified'] == "false"):
+	if(users[0]['verified'] == "false"):
 	    	return jsonify({"status":"ERROR","error":"You have not verified your account"})
 
-		if not check_password_hash(users[0]['password'],password):
+	if not check_password_hash(users[0]['password'],password):
             return jsonify({"status":"ERROR","error":"Username/Password is incorrect"})
 
-		access_token = create_access_token(identity=username)
-		refresh_token = create_refresh_token(identity=username)
+	access_token = create_access_token(identity=username)
+	refresh_token = create_refresh_token(identity=username)
 
-		resp = jsonify({"status":"OK"})
-		set_access_cookies(resp, access_token)
-		set_refresh_cookies(resp, refresh_token)
-		return resp, 200
-	except Exception, e:
-		return jsonify({"status":"ERROR", "error":str(e)})
+	resp = jsonify({"status":"OK"})
+	set_access_cookies(resp, access_token)
+	set_refresh_cookies(resp, refresh_token)
+	return resp, 200
+    except Exception, e:
+	return jsonify({"status":"ERROR", "error":str(e)})
 
 @user_api.route('/token/refresh', methods=['POST'])
 @jwt_refresh_token_required

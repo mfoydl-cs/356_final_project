@@ -1,4 +1,5 @@
 from flask import Flask, render_template, url_for, request, jsonify, redirect, json
+from pymongo import MongoClient
 from datetime import date
 import time
 import sys
@@ -27,12 +28,12 @@ def home():
     else:
         return render_template('login.html')
 
-@app.route("/additem")
+@app.route("/additem",methods=["POST"])
 @jwt_required
 def additem():
     c_user=get_jwt_identity()
     content = request.form["content"]
-    time= time.time()
+    ctime= time.time()
     item_json={
         "username":c_user,
         "property":{
@@ -40,12 +41,11 @@ def additem():
         },
         "retweeted":0,
         "content": content,
-        "timestamp":time
+        "timestamp":ctime
     }
 
     client = MongoClient()
     db= client.naft
 
     db.items.insert_one(item_json)
-
-    
+    return jsonify({"status":"OK"})
