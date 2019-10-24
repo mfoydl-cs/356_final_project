@@ -108,5 +108,8 @@ body{
 #searchbar:focus{
     background-color: white;
 }
+.post:hover{
+    opacity: 0.5;
+}
 
 

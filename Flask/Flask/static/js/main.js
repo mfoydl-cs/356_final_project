@@ -20,4 +20,73 @@ $(document).ready(function() {
         $(e.target.parentElement).toggleClass("repost");
         $(e.target.childElement).toggleClass("repost");
     });
+    $("#post").bind("click",function(e){
+        console.log("posting...");
+        var content= $("#post_text").val(); 
+        $.ajax({
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                "content":content
+            }),
+            dataType: "json",
+            url: "/additem",
+            success: function(response){
+                if(response.status=="OK"){
+                    window.location.replace("/")
+                    console.log("Added");
+                }
+                else{
+                    console.log(response);
+                }
+            },
+            error: function(e){
+                console.log("Error: "+e);
+            }
+        });
+    });
+    $("#logout").bind("click",function(e){
+        console.log("posting...");
+        var content= $("#post_text").val(); 
+        $.ajax({
+            type: "POST",
+            contentType: "application/json",
+            dataType: "json",
+            url: "/logout",
+            success: function(response){
+                if(response.status=="OK"){
+                    window.location.replace("/")
+                }
+                else{
+                    console.log(response);
+                }
+            },
+            error: function(e){
+                console.log("Error: "+e);
+            }
+        });
+    });
+    $(".post").bind("click",function(e){
+        /*
+        var id =$(this).find("._id").html();
+        console.log(id);
+        $.ajax({
+            type: "GET",
+            contentType: "application/json",
+            dataType: "json",
+            url: "/item/"+id,
+            success: function(response){
+                if(response.status=="OK"){
+                    console.log(response);
+                }
+                else{
+                    console.log(response);
+                }
+            },
+            error: function(e){
+                console.log("Error: "+e);
+            }
+        });
+        */
+    });
 });

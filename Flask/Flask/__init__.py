@@ -1,5 +1,6 @@
 from flask import Flask, render_template, url_for, request, jsonify, redirect, json
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 from flask_mail import Mail, Message
 from datetime import date
 import time
@@ -27,8 +28,12 @@ app.register_blueprint(user_api)
 def home():
     c_user= get_jwt_identity()
     if c_user:
-        return render_template('main.html')
+        client = MongoClient()
+        db= client.naft
+        items = db.items.find()
+        return render_template('main.html',items=getfeed())
     else:
+        
         return render_template('login.html')
 
 @app.route("/additem",methods=["POST"])
@@ -52,6 +57,18 @@ def additem():
 
     db.items.insert_one(item_json)
     return jsonify({"status":"OK"})
+
+@app.route("/item/<_id>", methods=["GET"])
+def getitem(_id):
+    try:
+        #_id=request.args.get("id")
+        client = MongoClient()
+        db=client.naft
+        item = db.items.find_one({"_id":ObjectId(_id)})
+        return jsonify({"status":"OK","item":item})
+        #return jsonify({"status":"OK"})
+    except Exception, e:
+        return jsonify({"status":"ERROR","error":str(e)})
 
 @app.route("/adduser",methods=['POST'])
 def addusr():
@@ -102,4 +119,30 @@ def reset():
     db.verified.drop()
     db.items.drop()
     return "All tables reset"
+
+def getfeed():
+    client = MongoClient()
+    db= client.naft
+    posts=[]
+    for item in db.items.find():
+        username=item["username"]
+        content=item["content"]
+        timestamp=(time.time()-item["timestamp"])
+        if timestamp/3600 < 1:
+            timestamp=str(truncate(timestamp/60))+"m"
+        elif timestamp/3600 > 24:
+            timestamp=str(truncate(timestamp/86400))+"d"
+        else:
+            timestamp=str(truncate(timestamp/3600))+"h"
+        _id= item["_id"]
+        post=[username,content,timestamp,_id]
+        posts.append(post)
+    return posts
+
+def truncate(n, decimals=0):
+    multiplier = 10 ** decimals
+    return int(n * multiplier) / multiplier
+
+
+
 

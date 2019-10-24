@@ -12,49 +12,51 @@
             <div id="leftbar">
                <div id="menu">
                    <div class="menu_element">
-                        <h3><a href="/home">Home</a></h3>
+                        <h3><a href="/">Home</a></h3>
                    </div>
                    <div class="menu_element">
                         <h3>Profile</h3>
                    </div>
-                   <div class="menu_element">
+                   <div class="menu_element" id="logout">
+                        <h3><a >Logout</a></h3>
+                       <!--
                         <form method="POST" action="/logout">
                             <input type="submit" value="Logout">
-                        </form>
+                        </form>-->
                    </div>
                </div> 
             </div>
 
             <div id="center">
                 <div id="post_form" class="container">
-                    <form method="POST" action="/additem">
                         <div>
                                 <textarea id="post_text" placeholder="Share Here!" maxlength="200" name="content"></textarea>
                         </div>
                         <div id="post_tools">
                             <p id="count" style="float: left; margin: 0"></p>
-                            <input type="submit" value="Post" style="float: right">
+                            <input type="submit" value="Post" style="float: right" id="post">
                         </div>
-                    </form>
                 </div>
                 <div id="feed">
-                    <div class="post container">
-                        <div class="post_head">
-                            <span style="color:darkgray"> Alex Reposted</span>
-                            <br>
-                            <span style="font-weight: bold">@Miles_Foydl</span>
-                            <span style="color: darkgray"> - 8h</span>
+                    {% for item in items %}
+                        <div class="post container">
+                            <span hidden class="_id">{{item[3]}}</span>
+                            <div class="post_head">
+                                <span style="color:darkgray"></span>
+                                <br>
+                                <span style="font-weight: bold">@{{item[0]}}</span>
+                                <span style="color: darkgray"> - {{item[2]}}</span>
+                            </div>
+                            <div class="post_body">
+                                <p>{{item[1]}}</p>
+                            </div>
+                            <div class="post_footer">
+                                <div><button class="button button-post button-comment" ><div class="comment"></div></button></div>
+                                <div><button class="button button-post button-repost"><span>&#x21ba;</span></button></div>
+                                <div><button class="button button-post button-like"><span class="heart"></span></button></div>
+                            </div>
                         </div>
-                        <div class="post_body">
-                            <p> blah blah blahsdlfjahsdljkghas;djfhasjdhfajklsdfhakljdhfklajshdfklajdh</p>
-                        </div>
-                        <div class="post_footer">
-                            <div><button class="button button-post button-comment" ><div class="comment"></div></button></div>
-                            <div><button class="button button-post button-repost"><span>&#x21ba;</span></button></div>
-                            <div><button class="button button-post button-like"><span class="heart"></span></button></div>
-                        </div>
-                    </div>
-                    {% block posts %}{% endblock %}
+                    {% endfor %}
                 </div>
             </div>
 
