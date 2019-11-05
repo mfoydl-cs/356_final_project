@@ -88,8 +88,9 @@ $(document).ready(function() {
             }
         });
     });
-    $('#search').bind('click',function(e)){
-        var q = $("#searchbar").val()
+    $('#search').bind('click',function(e){
+        console.log("SEARCH");
+        var q = $("#searchbar").val();
         console.log(q);
         $.ajax({
             type: "POST",
@@ -112,5 +113,5 @@ $(document).ready(function() {
                 console.log("Error: "+e);
             }
         });
-    }
+    });
 });

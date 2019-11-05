@@ -134,7 +134,7 @@ def getUserFollowers(username):
 def getUserFollowing(username):
     try:
         limit = request.args.get("limit")
-        if(limit):
+        if limit:
             limit= int(limit)
             if(limit > 200):
                 limit = 200
@@ -216,22 +216,30 @@ def addusr():
 
 @app.route("/search",methods=["POST"])
 def search():
-    timestamp = request.json.get('timestamp',None)
-    limit = int(request.json.get('limit',None))
-    q = request.json.get('q',None)
-    username = request.json.get('username',None)
-    following = bool(request.json.get('following',None))
-    query = {'query':{}}
-    if q and q not "":
-        match = {"match":{'text':q}}
-        query['query']+=match
-    if timestamp:
-        time = {'timestamp':{'gte':timestamp}}
-        query['query']+=time
-    if username:
-        user = {'username':username}
-        query['query']+=user
-    return query
+    try:
+        timestamp = request.json.get('timestamp',None)
+        limit = request.json.get('limit',None)
+        q = request.json.get('q',None)
+        username = request.json.get('username',None)
+        following = request.json.get('following',None)
+        query = {"query":{'bool':{'must':[]}}}
+        if str(q) != "":
+            query['query']['bool']['must'].append({'match':{'content':q}})
+        if timestamp:
+            query['query']['bool']['must'].append({'range':{'timestamp':{'gte':timestamp}}})
+        if username:
+            query['query']['bool']['must'].append({'match':{'username':username}})
+        if limit:
+            search = es.search(index="posts",body=query, size=limit)
+        else:
+            search = es.search(index="posts",body=query)
+        posts=[]
+        for item in search['hits']['hits']:
+            posts.append(item['_source'])
+
+        return jsonify({"status":"OK","items":posts})
+    except Exception, e:
+        return jsonify({"status":"ERROR","error":str(e)}) 
 
 @app.route("/reset",methods=["GET"])
 def reset():
