@@ -1,0 +1,68 @@
+<html>
+    <head>
+        <title>{{username}}</title>
+        <link rel="stylesheet" href="../static/css/user.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script type="text/javascript" src="../static/js/user.js"></script>
+    </head>
+    <body>
+        <div id="main_center">
+            <div id="content">
+                <div id="leftbar">
+                   <div id="menu">
+                       <div class="menu_element">
+                            <h3><a href="/">Home</a></h3>
+                       </div>
+                       <div class="menu_element">
+                            <h3>Profile</h3>
+                       </div>
+                       <div class="menu_element" id="logout">
+                            <h3><a >Logout</a></h3>
+                           <!--
+                            <form method="POST" action="/logout">
+                                <input type="submit" value="Logout">
+                            </form>-->
+                       </div>
+                   </div> 
+                </div>
+    
+                <div id="center">
+                    <div id="user" class="container">
+                            
+                    </div>
+                    <!--
+                    <div id="feed">
+                        {% for item in items %}
+                            <div class="post container">
+                                <span hidden class="_id">{{item[3]}}</span>
+                                <div class="post_head">
+                                    <span style="color:darkgray"></span>
+                                    <br>
+                                    <span style="font-weight: bold">@{{item[0]}}</span>
+                                    <span style="color: darkgray"> - {{item[2]}}</span>
+                                </div>
+                                <div class="post_body">
+                                    <p>{{item[1]}}</p>
+                                </div>
+                                <div class="post_footer">
+                                    <div><button class="button button-post button-comment" ><div class="comment"></div></button></div>
+                                    <div><button class="button button-post button-repost"><span>&#x21ba;</span></button></div>
+                                    <div><button class="button button-post button-like"><span class="heart"></span></button></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                -->
+                </div>
+    
+                <div id="rightbar">
+                    <div>
+                        <form method="POST" action="/search">
+                            <input type="search" name="search" placeholder="Search..." id="searchbar">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

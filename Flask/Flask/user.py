@@ -71,18 +71,14 @@ def login():
     except Exception, e:
 	return jsonify({"status":"ERROR", "error":str(e)})
 
-@user_api.route('/token/refresh', methods=['POST'])
+@user_api.route('/refresh', methods=['POST'])
 @jwt_refresh_token_required
 def refresh():
-    try:
-        current_user = get_jwt_identity()
-        access_token = create_access_token(identity=current_user)
-
-        resp = jsonify({'status':"OK"})
-        set_access_cookies(resp, access_token)
-        return resp, 200
-    except Exception, e:
-		return jsonify({"status":"ERROR","error":str(e)})
+    current_user = get_jwt_identity()
+    ret = {
+        'access_token': create_access_token(identity=current_user)
+    }
+    return jsonify(ret), 200
 
 @user_api.route("/logout",methods=["POST"])
 def logout():
@@ -92,4 +88,3 @@ def logout():
 		return resp, 200
 	except Exception, e:
 		return jsonify({"status":"ERROR","error":str(e)})
-

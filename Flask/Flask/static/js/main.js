@@ -67,7 +67,7 @@ $(document).ready(function() {
         });
     });
     $(".post").bind("click",function(e){
-        /*
+        
         var id =$(this).find("._id").html();
         console.log(id);
         $.ajax({
@@ -87,6 +87,30 @@ $(document).ready(function() {
                 console.log("Error: "+e);
             }
         });
-        */
     });
+    $('#search').bind('click',function(e)){
+        var q = $("#searchbar").val()
+        console.log(q);
+        $.ajax({
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                "q":q
+            }),
+            dataType: "json",
+            url: "/search",
+            success: function(response){
+                if(response.status=="OK"){
+                    //window.location.replace("/")
+                    console.log(response);
+                }
+                else{
+                    console.log(response);
+                }
+            },
+            error: function(e){
+                console.log("Error: "+e);
+            }
+        });
+    }
 });
