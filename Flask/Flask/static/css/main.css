@@ -105,6 +105,20 @@ body{
     padding-left: 10;
     background-color: #e6ecf0;
 }
+#searchbar2{
+    width:100%;
+    height: 40;
+    border-radius: 15px;
+    font-size: 15;
+    margin-top:15;
+    padding-top: 5;
+    padding-bottom: 5;
+    padding-left: 10;
+    background-color: #e6ecf0;
+}
+#searchbar:focus{
+    background-color: white;
+}
 #searchbar:focus{
     background-color: white;
 }

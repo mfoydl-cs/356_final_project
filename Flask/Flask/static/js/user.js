@@ -72,16 +72,18 @@ $(document).ready(function() {
         });
     });
     */
-    $('#search').bind('click',function(e){
+     $('#search').bind('click',function(e){
         console.log("SEARCH");
         var q = $("#searchbar").val();
-        console.log(q);
-        var r1;
+        var user = $('#searchbar2').val();
+        var follow = $("#following").prop('checked');
         $.ajax({
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
-                "q":q
+                "q":q,
+                "username":user,
+                "following":follow
             }),
             dataType: "json",
             url: "/search",
@@ -96,7 +98,20 @@ $(document).ready(function() {
         });
     });
     $("#profile").bind("click",function(e){
-	
+        $.ajax({
+            type: "POST",
+            contentType: "application/json",
+            dataType: "json",
+            url: "/getuser",
+            success: function(response){
+                username= response.user;
+                window.location.replace("/user/"+username+"/show");
+                console.log(response);
+            },
+            error: function(e){
+                console.log("Error: "+e);
+            }
+        });
     });
     $("#follow").bind("click",function(){
         var follow= $(this).hasClass('followed');

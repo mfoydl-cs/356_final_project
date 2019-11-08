@@ -178,6 +178,7 @@ def follow():
         return jsonify({"status":"ERROR","error":str(e)})
 
 @app.route("/user/<username>/show")
+@jwt_optional
 def showUser(username):
     query = {"query":{'match':{'username':username}}}
     search = es.search(index="posts",body=query, size=25)
@@ -190,10 +191,11 @@ def showUser(username):
     if user:
         logged=True
         user1= db.users.find_one({"username":user})
-        following = user1['following']
-        if username in following:
-            follow=True
-    return render_template('user.html',username=username,items=items,following=follow,logged=logged)
+        if user1:
+            following = user1['following']
+            if username in following:
+                follow=True
+    return render_template('user.html',username=username,items=items,follow=follow,logged=logged)
 
 @app.route("/getuser",methods=["POST"])
 @jwt_required
@@ -245,14 +247,16 @@ def addusr():
         return jsonify({"status":"ERROR","error":str(e)}) # return status: ERROR if there is an exception
 
 @app.route("/search",methods=["POST"])
+@jwt_optional
 def search():
     try:
         timestamp = request.json.get('timestamp',None)
         limit = request.json.get('limit',None)
         q = request.json.get('q',None)
         username = request.json.get('username',None)
-        following = request.json.get('following',None)
+        following = request.json.get('following',bool)
         query = {"query":{'bool':{'must':[]}}}
+        fusers=[]
         if str(q) != "":
             query['query']['bool']['must'].append({'match':{'content':q}})
         else:
@@ -261,6 +265,13 @@ def search():
             query['query']['bool']['must'].append({'range':{'timestamp':{'gte':timestamp}}})
         if username:
             query['query']['bool']['must'].append({'match':{'username':username}})
+        if following == True:
+            client = MongoClient()
+            db = client.naft
+            if get_jwt_identity():
+                user = db.users.find_one({"username":get_jwt_identity()})
+                fusers= user['following']
+                query['query']['bool']['must'].append({'terms':{'username':fusers}})
         if limit:
             if limit > 100:
                 search = es.search(index="posts",body=query, size=100)
@@ -272,7 +283,7 @@ def search():
         for item in search['hits']['hits']:
             posts.append(item['_source'])
 
-        return jsonify({"status":"OK","items":posts})
+        return jsonify({"status":"OK","items":posts,"q":query,"following":following})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
 

@@ -100,13 +100,15 @@ $(document).ready(function() {
     $('#search').bind('click',function(e){
         console.log("SEARCH");
         var q = $("#searchbar").val();
-        console.log(q);
-        var r1;
+        var user = $('#searchbar2').val();
+        var follow = $("#following").prop('checked');
         $.ajax({
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
-                "q":q
+                "q":q,
+                "username":user,
+                "following":follow
             }),
             dataType: "json",
             url: "/search",
@@ -124,9 +126,6 @@ $(document).ready(function() {
         $.ajax({
             type: "POST",
             contentType: "application/json",
-            data: JSON.stringify({
-                "q":"hhi"
-            }),
             dataType: "json",
             url: "/getuser",
             success: function(response){
