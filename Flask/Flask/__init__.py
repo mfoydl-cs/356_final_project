@@ -195,7 +195,7 @@ def showUser(username):
             following = user1['following']
             if username in following:
                 follow=True
-    return render_template('user.html',username=username,items=items,follow=follow,logged=logged)
+    return render_template('user.html',username=username,items=items,follow=follow,logged=logged,user=user)
 
 @app.route("/getuser",methods=["POST"])
 @jwt_required
