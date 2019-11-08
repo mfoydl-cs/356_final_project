@@ -65,7 +65,7 @@ def additem():
     #db.items.insert_one(item_json)
     es.index(index="posts",id=mid,doc_type="post",body=item_json)
     db.users.update_one({"username":c_user},{"$push":{"posts":mid}})
-    return jsonify({"status":"OK"})
+    return jsonify({"status":"OK","id":mid})
 
 @app.route("/item/<mid>", methods=["GET","DELETE"])
 def getitem(mid):
@@ -80,7 +80,7 @@ def getitem(mid):
         else:
             #item = db.items.find_one({"mid":mid},{"_id":0})
             item = es.get(index="posts",doc_type='post',id=mid)
-            return jsonify({"status":"OK","item":dumps(item['_source'])})
+            return jsonify({"status":"OK","item":item['_source']})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
 
@@ -90,6 +90,8 @@ def getUser(username):
         client = MongoClient()
         db= client.naft
         user= db.users.find_one({"username":username})
+        if user is None:
+            return jsonify({"status":"error","error":"User not found"})
         return jsonify({"status":"OK","user":{"email":user['email'],"followers":len(user['followers']),"following":len(user['following'])}})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
@@ -148,23 +150,30 @@ def getUserFollowing(username):
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
 
-@app.route("/follow")
+@app.route("/follow",methods=["POST"])
 @jwt_required
 def follow():
     try:
         user = get_jwt_identity()
         username= request.json.get("username",None)
-        follow= request.json.get("follow",None)
+        follow= request.json.get("follow",bool)
         if(username):
             client = MongoClient()
             db = client.naft
-            if(follow):
+            user1= db.users.find_one({"username":username})
+            user2= db.users.find_one({"username":user})
+            if user1 is None:
+                return jsonify({"status":"error","error":"User not found"})
+            if user2 is None:
+                return jsonify({"status":"error","error":"User Not Found"})
+            if(follow ==  True):
                 db.users.update_one({"username":user},{"$push":{"following":username}})
                 db.users.update_one({"username":username},{"$push":{"followers":user}})
+                return jsonify({"status":"OK"})
             else:
                 db.users.update_one({"username":user},{"$pull":{"following":username}})
                 db.users.update_one({"username":username},{"$pull":{"followers":user}})
-            return jsonify("status","OK")
+            return jsonify({"status","OK"})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
 
@@ -225,14 +234,19 @@ def search():
         query = {"query":{'bool':{'must':[]}}}
         if str(q) != "":
             query['query']['bool']['must'].append({'match':{'content':q}})
+        else:
+            query['query']['bool']['must'].append({'match_all':{}})
         if timestamp:
             query['query']['bool']['must'].append({'range':{'timestamp':{'gte':timestamp}}})
         if username:
             query['query']['bool']['must'].append({'match':{'username':username}})
         if limit:
-            search = es.search(index="posts",body=query, size=limit)
+            if limit > 100:
+                search = es.search(index="posts",body=query, size=100)
+            else:
+                search = es.search(index="posts",body=query, size=limit)
         else:
-            search = es.search(index="posts",body=query)
+            search = es.search(index="posts",body=query, size=25)
         posts=[]
         for item in search['hits']['hits']:
             posts.append(item['_source'])

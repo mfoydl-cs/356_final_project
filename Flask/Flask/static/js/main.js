@@ -114,4 +114,28 @@ $(document).ready(function() {
             }
         });
     });
+    $("#profile").bind("click",function(e){
+	$.ajax({
+	    type: "POST",
+	    contentType: "application/json",
+	    data: JSON.stringify({
+	      "username":"m",
+	      "follow":true
+	    }),
+	    dataType: "json",
+            url: "/follow",
+            success: function(response){
+                if(response.status=="OK"){
+                    //window.location.replace("/")
+                    console.log(response);
+                }
+                else{
+                    console.log(response);
+                }
+            },
+            error: function(e){
+                console.log("Error: "+e);
+            }
+	});
+    });
 });
