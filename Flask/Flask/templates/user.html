@@ -1,9 +1,10 @@
 <html>
     <head>
         <title>{{username}}</title>
-        <link rel="stylesheet" href="../static/css/user.css">
+        <link rel="stylesheet" href="../../static/css/user.css">
+        <link rel="stylesheet" href="../../static/css/like.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-        <script type="text/javascript" src="../static/js/user.js"></script>
+        <script type="text/javascript" src="../../static/js/user.js"></script>
     </head>
     <body>
         <div id="main_center">
@@ -28,9 +29,14 @@
     
                 <div id="center">
                     <div id="user" class="container">
-                            
+                            <h1 id="username">@{{ username }}</h1>
+                            {% if follow %}  
+                                <input id="follow" value="Follow" type="button" class="followed"/>
+                            {% else %}
+                                <input id="follow" value="Follow" type="button" class="followed"/>
+                            {% endif %}
                     </div>
-                    <!--
+                    
                     <div id="feed">
                         {% for item in items %}
                             <div class="post container">
@@ -40,6 +46,9 @@
                                     <br>
                                     <span style="font-weight: bold">@{{item[0]}}</span>
                                     <span style="color: darkgray"> - {{item[2]}}</span>
+                                    {% if item[0] == username %}
+                                        <input type="button" class='delete' value="delete"/>
+                                    {% endif %}
                                 </div>
                                 <div class="post_body">
                                     <p>{{item[1]}}</p>
@@ -52,7 +61,6 @@
                             </div>
                         {% endfor %}
                     </div>
-                -->
                 </div>
     
                 <div id="rightbar">

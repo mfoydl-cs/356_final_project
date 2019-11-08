@@ -19,24 +19,11 @@
                    </div>
                    <div class="menu_element" id="logout">
                         <h3><a >Logout</a></h3>
-                       <!--
-                        <form method="POST" action="/logout">
-                            <input type="submit" value="Logout">
-                        </form>-->
                    </div>
                </div> 
             </div>
 
             <div id="center">
-                <div id="post_form" class="container">
-                        <div>
-                                <textarea id="post_text" placeholder="Share Here!" maxlength="200" name="content"></textarea>
-                        </div>
-                        <div id="post_tools">
-                            <p id="count" style="float: left; margin: 0"></p>
-                            <input type="submit" value="Post" style="float: right" id="post">
-                        </div>
-                </div>
                 <div id="feed">
                     {% for item in items %}
                         <div class="post container">
@@ -44,7 +31,7 @@
                             <div class="post_head">
                                 <span style="color:darkgray"></span>
                                 <br>
-                                <span style="font-weight: bold" class="user">@{{item[0]}}</span>
+                                <span style="font-weight: bold">@{{item[0]}}</span>
                                 <span style="color: darkgray"> - {{item[2]}}</span>
                             </div>
                             <div class="post_body">

@@ -108,8 +108,13 @@ body{
 #searchbar:focus{
     background-color: white;
 }
+/*
 .post:hover{
     border: 4px solid blue
+}
+*/
+.user:hover{
+    color: blue;
 }
 
 

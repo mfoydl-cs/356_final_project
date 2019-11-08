@@ -163,9 +163,9 @@ def follow():
             user1= db.users.find_one({"username":username})
             user2= db.users.find_one({"username":user})
             if user1 is None:
-                return jsonify({"status":"error","error":"User not found"})
+                return jsonify({"status":"error","error":"User1 not found","user":username})
             if user2 is None:
-                return jsonify({"status":"error","error":"User Not Found"})
+                return jsonify({"status":"error","error":"User2 Not Found"})
             if(follow ==  True):
                 db.users.update_one({"username":user},{"$push":{"following":username}})
                 db.users.update_one({"username":username},{"$push":{"followers":user}})
@@ -173,15 +173,36 @@ def follow():
             else:
                 db.users.update_one({"username":user},{"$pull":{"following":username}})
                 db.users.update_one({"username":username},{"$pull":{"followers":user}})
-            return jsonify({"status","OK"})
+            return jsonify({"status":"OK"})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
 
 @app.route("/user/<username>/show")
 def showUser(username):
-    return render_template('user.html')
+    query = {"query":{'match':{'username':username}}}
+    search = es.search(index="posts",body=query, size=25)
+    items = getPosts(search)
+    client = MongoClient()
+    db = client.naft
+    user= get_jwt_identity()
+    follow=False
+    logged=False
+    if user:
+        logged=True
+        user1= db.users.find_one({"username":user})
+        following = user1['following']
+        if username in following:
+            follow=True
+    return render_template('user.html',username=username,items=items,following=follow,logged=logged)
 
-
+@app.route("/getuser",methods=["POST"])
+@jwt_required
+def getusername():
+    try:
+        username = get_jwt_identity()
+        return jsonify({"status":"OK","user":username})
+    except Exception, e:
+        return jsonify({"status":"ERROR","error":str(e)})
 
 @app.route("/adduser",methods=['POST'])
 def addusr():
@@ -253,8 +274,17 @@ def search():
 
         return jsonify({"status":"OK","items":posts})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)}) 
+        return jsonify({"status":"ERROR","error":str(e)})
 
+'''
+@app.route("/search/results", methods=["GET"])
+def results():
+    try:
+        result = request.json.get('result')
+        return renderPosts(result)
+    except Exception, e:
+        return jsonify({"status":"ERROR","error":str(e)})
+'''
 @app.route("/reset",methods=["GET"])
 def reset():
     client = MongoClient()
@@ -286,6 +316,28 @@ def getfeed():
         post=[username,content,timestamp,_id]
         posts.append(post)
     return posts
+
+def getPosts(s):
+    #client = MongoClient()
+    #db= client.naft
+    posts=[]
+    items = s['hits']['hits']
+    for i in items: #db.items.find()
+        item=i['_source']
+        username=item["username"]
+        content=item["content"]
+        timestamp=(time.time()-item["timestamp"])
+        if timestamp/3600 < 1:
+            timestamp=str(truncate(timestamp/60))+"m"
+        elif timestamp/3600 > 24:
+            timestamp=str(truncate(timestamp/86400))+"d"
+        else:
+            timestamp=str(truncate(timestamp/3600))+"h"
+        _id= i["_id"]
+        post=[username,content,timestamp,_id]
+        posts.append(post)
+    return posts
+
 
 def truncate(n, decimals=0):
     multiplier = 10 ** decimals

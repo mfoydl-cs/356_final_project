@@ -20,31 +20,6 @@ $(document).ready(function() {
         $(e.target.parentElement).toggleClass("repost");
         $(e.target.childElement).toggleClass("repost");
     });
-    $("#post").bind("click",function(e){
-        console.log("posting...");
-        var content= $("#post_text").val(); 
-        $.ajax({
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-                "content":content
-            }),
-            dataType: "json",
-            url: "/additem",
-            success: function(response){
-                if(response.status=="OK"){
-                    window.location.replace("/")
-                    console.log("Added");
-                }
-                else{
-                    console.log(response);
-                }
-            },
-            error: function(e){
-                console.log("Error: "+e);
-            }
-        });
-    });
     $(".user").bind("click",function(e){
         console.log("user");
         var user =$(this).html();
@@ -121,18 +96,55 @@ $(document).ready(function() {
         });
     });
     $("#profile").bind("click",function(e){
+	
+    });
+    $("#follow").bind("click",function(){
+        var follow= $(this).hasClass('followed');
+        var username= $("#username").html().replace("@","");
+        console.log(username);
         $.ajax({
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
-                "q":"hhi"
+              "username":username,
+              "follow":!follow
             }),
             dataType: "json",
-            url: "/getuser",
+                url: "/follow",
+                success: function(response){
+                    if(response.status=="OK"){
+                        if(follow){
+                            $("#follow").removeClass("followed");
+                        }
+                        else{
+                            $("#follow").addClass("followed");
+                        }
+                        console.log(response);
+                    }
+                    else{
+                        console.log(response);
+                    }
+                },
+                error: function(e){
+                    console.log("Error: "+e);
+                }
+        });
+    });
+    $(".delete").bind("click",function(){
+        var id=$(this).parent().parent().find("._id").html()
+        $.ajax({
+            type: "DELETE",
+            contentType: "application/json",
+            dataType: "json",
+            url: "/item/"+id,
             success: function(response){
-                username= response.user;
-                window.location.replace("/user/"+username+"/show");
-                console.log(response);
+                if(response.status=="OK"){
+                    console.log(response);
+                    window.location.replace(window.location);
+                }
+                else{
+                    console.log(response);
+                }
             },
             error: function(e){
                 console.log("Error: "+e);
