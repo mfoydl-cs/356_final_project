@@ -15,6 +15,7 @@ from flask_jwt_extended import (
 )
 from werkzeug import generate_password_hash, check_password_hash
 from elasticsearch import Elasticsearch
+from gridfs import GridFS
 
 app = Flask(__name__)
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
@@ -25,6 +26,7 @@ jwt = JWTManager(app)
 mail = Mail(app)
 es = Elasticsearch('http://localhost:9200')
 app.register_blueprint(user_api)
+fs = GridFS(MongoClient().naft)
 
 @app.route("/")
 @jwt_optional
@@ -46,6 +48,9 @@ def home():
 def additem():
     c_user=get_jwt_identity()
     content = request.json.get("content",None)
+    childType = request.json.get("childType",None)
+    parent = request.json.get("parent",None)
+    media = request.json.get("media",None)
     ctime= time.time()
     mid = c_user+str(ctime)
     item_json={
@@ -56,13 +61,24 @@ def additem():
         },
         "retweeted":0,
         "content": content,
+        "childType": childType,
+        "parent": parent,
+        "media":media,
         "timestamp":ctime
     }
-
-    client = MongoClient()
-    db= client.naft
-
-    #db.items.insert_one(item_json)
+    if(childType=="retweet"):
+        q = {
+                "script": {
+                    "inline": "ctx._source.retweeted+=1"
+                },
+                "query": {
+                    "match": {
+                        "id": parent
+                    }
+                }
+        }
+        es.update(body=q, doc_type='post', index='posts')
+    
     es.index(index="posts",id=mid,doc_type="post",body=item_json)
     db.users.update_one({"username":c_user},{"$push":{"posts":mid}})
     return jsonify({"status":"OK","id":mid})
@@ -70,19 +86,40 @@ def additem():
 @app.route("/item/<mid>", methods=["GET","DELETE"])
 def getitem(mid):
     try:
-        #client = MongoClient()
-        #db=client.naft
-
         if(request.method == 'DELETE'):
-            #db.items.update_one({"$pull":{"mid":mid}})
             es.delete(index="posts",doc_type="post",id=mid)
             return jsonify({"status":"OK"})
         else:
-            #item = db.items.find_one({"mid":mid},{"_id":0})
             item = es.get(index="posts",doc_type='post',id=mid)
             return jsonify({"status":"OK","item":item['_source']})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
+
+@app.route("/item/<mid>/like",methods=["POST"])
+def likeitem(mid):
+    try:
+        like= request.json.get("like",bool)
+        if like == None:
+            like = True
+        if like ==True:
+            line="ctx._source.property.likes+=1"
+        else:
+            line = "ctx._source.property.likes+=1"
+        q = {
+                "script": {
+                    "inline": line
+                },
+                "query": {
+                    "match": {
+                        "id": mid
+                    }
+                }
+        }
+        es.update(body=q, doc_type='post', index='posts')
+        return jsonify({"status":"OK"})
+    except Exception, e:
+        return jsonify({"status":"ERROR","error":str(e)})
+
 
 @app.route("/user/<username>",methods=["GET"])
 def getUser(username):
@@ -262,7 +299,7 @@ def search():
         else:
             query['query']['bool']['must'].append({'match_all':{}})
         if timestamp:
-            query['query']['bool']['must'].append({'range':{'timestamp':{'gte':timestamp}}})
+            query['query']['bool']['must'].append({'range':{'timestamp':{'lte':timestamp}}})
         if username:
             query['query']['bool']['must'].append({'match':{'username':username}})
         if following == True:
@@ -286,25 +323,6 @@ def search():
         return jsonify({"status":"OK","items":posts,"q":query,"following":following})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
-
-'''
-@app.route("/search/results", methods=["GET"])
-def results():
-    try:
-        result = request.json.get('result')
-        return renderPosts(result)
-    except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
-'''
-@app.route("/reset",methods=["GET"])
-def reset():
-    client = MongoClient()
-    db= client.naft
-
-    db.users.drop()
-    db.verified.drop()
-    db.items.drop()
-    return "All tables reset"
 
 def getfeed():
     #client = MongoClient()
@@ -369,6 +387,43 @@ def my_expired_token_callback():
 		return resp, 200
 	except Exception, e:
 		return jsonify({"status":"ERROR","error":str(e)})
+
+@app.route("/reset",methods=["GET"])
+def reset():
+    client = MongoClient()
+    db= client.naft
+
+    db.users.drop()
+    db.verified.drop()
+    es.indices.delete(index="posts",ignore=[400,404])
+    es.indices.create(index="posts",ignore=400)
+    return jsonify({"status":"OK"})
+
+
+@app.route("/addmedia",methods=["POST"])
+def addmedia():
+    try:
+        file=request.files['content']
+        if content:
+            filename= secure_filename(file.filename)
+            oid = fs.put(file, content_type=file.content_type, filename=filename)
+            return jsonify({"status":"OK","oid":oid})
+    except Exception, e:
+        return jsonify({"status":"ERROR","error":str(e)})
+
+
+@app.route("/media/<id>", methods=["GET"])
+def getmedia(oid):
+    try:
+        file = fs.find_one({"oid":oid})
+        response = make_response(file.read())
+        response.mimetype = file.content_type
+        return response, 200
+    except Exception, e:
+        return 404
+    
+
+
 
 
 
