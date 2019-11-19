@@ -13,7 +13,7 @@ from flask_jwt_extended import (
     get_jwt_identity, set_access_cookies,
     set_refresh_cookies, unset_jwt_cookies, jwt_optional
 )
-from werkzeug import generate_password_hash, check_password_hash
+from werkzeug import generate_password_hash, check_password_hash, secure_filename
 from elasticsearch import Elasticsearch
 from gridfs import GridFS
 
@@ -404,7 +404,7 @@ def reset():
 def addmedia():
     try:
         file=request.files['content']
-        if content:
+        if file:
             filename= secure_filename(file.filename)
             oid = fs.put(file, content_type=file.content_type, filename=filename)
             return jsonify({"status":"OK","oid":oid})
