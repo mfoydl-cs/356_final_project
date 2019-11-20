@@ -401,13 +401,15 @@ def reset():
 
 
 @app.route("/addmedia",methods=["POST"])
+@jwt_required
 def addmedia():
+    c_user = get_jwt_identity()
     try:
         file=request.files['content']
         if file:
             filename= secure_filename(file.filename)
-            oid = c_user+str(time.time())
-            fs.put(file, content_type=file.content_type, filename=filename,oid=oid)
+            
+fs.put(file, content_type=file.content_type, filename=filename)
             return jsonify({"status":"OK","oid":oid})
     except Exception, e:
         return jsonify({"status":"ERROR","error":str(e)})
