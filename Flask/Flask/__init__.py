@@ -17,11 +17,8 @@ from werkzeug import generate_password_hash, check_password_hash, secure_filenam
 from elasticsearch import Elasticsearch
 from gridfs import GridFS
 import mimetypes
-from itertools import imap
-from operator import itemgetter
 from pymemcache.client import base
 from pymemcache import fallback
-from celery import Celery
 
 app = Flask(__name__)
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
@@ -39,7 +36,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg','mp4'}
 
 #mclient = fallback.FallbackClient((new_cache, old_cache))
 mc = base.Client(('127.0.0.1',11211))
-clery = Celery(broker='redis://localhost:6379/0')
 
 @app.route("/")
 @jwt_optional
@@ -53,7 +49,7 @@ def home():
         return render_template('main.html',items=getfeed())
     else:
         return render_template('login.html')
-    #except Exception, e:
+    #except Exception as e:
 
 
 @app.route("/additem",methods=["POST"])
@@ -132,7 +128,7 @@ def getitem(mid):
         else:
             #item = es.get(index="posts",doc_type='post',id=mid)
             return jsonify({"status":"OK","item":item['_source']})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/item/<mid>/like",methods=["POST"])
@@ -163,7 +159,7 @@ def likeitem(mid):
         }
         es.update(index='posts',id=mid,body=q)
         return jsonify({"status":"OK"})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 
 
@@ -176,7 +172,7 @@ def getUser(username):
         if user is None:
             return jsonify({"status":"error","error":"User not found"}),404
         return jsonify({"status":"OK","user":{"email":user['email'],"followers":len(user['followers']),"following":len(user['following'])}})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)})
 
 @app.route("/user/<username>/posts",methods=["GET"])
@@ -194,7 +190,7 @@ def getUserPosts(username):
         user = db.users.find_one({"username":username})
         posts= user['posts'][:limit]
         return jsonify({"status":"OK","items":posts})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/user/<username>/followers",methods=["GET"])
@@ -212,7 +208,7 @@ def getUserFollowers(username):
         user = db.users.find_one({"username":username})
         users= user['followers'][:limit]
         return jsonify({"status":"OK","users":users})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)})
 
 @app.route("/user/<username>/following",methods=["GET"])
@@ -230,7 +226,7 @@ def getUserFollowing(username):
         user = db.users.find_one({"username":username})
         users= user['following'][:limit]
         return jsonify({"status":"OK","users":users})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/follow",methods=["POST"])
@@ -257,7 +253,7 @@ def follow():
                 db.users.update_one({"username":user},{"$pull":{"following":username}})
                 db.users.update_one({"username":username},{"$pull":{"followers":user}})
             return jsonify({"status":"OK"})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/user/<username>/show")
@@ -286,15 +282,15 @@ def getusername():
     try:
         username = get_jwt_identity()
         return jsonify({"status":"OK","user":username})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/adduser",methods=['POST'])
 def addusr():
     try:
-	name=request.json.get("username",None)
-	password=request.json.get("password",None)
-	email=request.json.get("email",None)
+        name=request.json.get("username",None)
+        password=request.json.get("password",None)
+        email=request.json.get("email",None)
 
         #hashed_password= generate_password_hash(password)
 
@@ -333,7 +329,7 @@ def addusr():
 
         #return status: OK
         return jsonify({"status":"OK"})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409 # return status: error if there is an exception
 
 @app.route("/search",methods=["POST"])
@@ -395,7 +391,7 @@ def search():
             posts.sort(key=etimestamp,reverse=True)
 
         return jsonify({"status":"OK","items":posts,"q":query})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 def etimestamp(json):
     try:
@@ -465,7 +461,7 @@ def my_expired_token_callback():
 		resp = jsonify({"status":"error","error":"User was logged out"})
 		unset_jwt_cookies(resp)
 		return resp, 200
-	except Exception, e:
+	except Exception as e:
 		return jsonify({"status":"error","error":str(e)}),401
 @jwt.unauthorized_loader
 def my_unauthorized_loader_callback(callback):
@@ -505,7 +501,7 @@ def addmedia():
             return jsonify({"status":"OK","id":oid})
         else:
             return jsonify({"status":"error","error":"file type not allowed"}),405
-    except Exception, e:
+    except Exception as e:
         return jsonify({"status":"error","error":str(e)}),409
 
 
@@ -542,10 +538,10 @@ def get_user(username):
 @app.route("/test",methods=["GET"])
 def test():
     try:
-        username = "a"
+        username = "m"
         user = get_user(username)
         return jsonify({"user":dumps(user)})
-    except Exception, e:
+    except Exception as e:
         return jsonify({"Error":str(e)})
 
 
