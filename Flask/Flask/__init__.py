@@ -19,6 +19,9 @@ from gridfs import GridFS
 import mimetypes
 from itertools import imap
 from operator import itemgetter
+from pymemcache.client import base
+from pymemcache import fallback
+from celery import Celery
 
 app = Flask(__name__)
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
@@ -31,6 +34,12 @@ es = Elasticsearch('http://localhost:9200')
 app.register_blueprint(user_api)
 fs = GridFS(MongoClient().naft)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg','mp4'}
+#old_cache = base.Client(('localhost', 11211), ignore_exc=True)
+#new_cache = base.Client(('localhost', 11212))
+
+#mclient = fallback.FallbackClient((new_cache, old_cache))
+mc = base.Client(('127.0.0.1',11211))
+clery = Celery(broker='redis://localhost:6379/0')
 
 @app.route("/")
 @jwt_optional
@@ -82,6 +91,8 @@ def additem():
         "media":media,
         "timestamp":ctime
     }
+
+    #SEND RETWEET TO ASYNC
     if(childType=="retweet"):
         q = {
                 "script": {
@@ -90,8 +101,10 @@ def additem():
         }
         es.update(index='posts',id=parent,body=q)
     
+    #SEND POST TO ASYNC
     es.index(index="posts",id=mid,doc_type="post",body=item_json)
     db.users.update_one({"username":c_user},{"$push":{"posts":mid}})
+
     return jsonify({"status":"OK","id":mid})
 
 @app.route("/item/<mid>", methods=["GET","DELETE"])
@@ -302,14 +315,18 @@ def addusr():
             "followers":[],
             "verified":"false"
             }
+
+        # SEND VERIFY AND EMAIL TO ASYNC TASK
+
         #Add new user to database
         uid = db.users.insert_one(json)
-        json2= {"email":email,"key":str(uid.inserted_id)}
+        key = str(uid.inserted_id)
+        json2= {"email":email,"key":key}
         db.verified.insert_one(json2)
 
         # send verification email
         key= "validation key: <"+str(uid.inserted_id)+">\n"
-        url="http://cowzilla.cse356.compas.cs.stonybrook.edu/verify?email={}&key={}".format(email,str(uid.inserted_id))
+        url="http://cowzilla.cse356.compas.cs.stonybrook.edu/verify?email={}&key={}".format(email,key)
         body="Please verify you email with this code:\n "+key+url
         msg= Message(subject="Verify Email",body=body,sender="ubuntu@wu1.cloud.compas.cs",recipients=[email])
         mail.send(msg)
@@ -507,14 +524,26 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def get_user(username):
+    #while True:
+        #result,cas = mclient.get(username)
+    result = mc.get(username)
+    if result == "None":
+        client = MongoClient()
+        db= client.naft
+        result = db.users.find_one({"username":username},{"username":1,"_id":0})
+        mc.set(username,result)
+        return result
+    #    if mclient.cas(username,result,cas):
+    #        break
+    return result
+    
 
 @app.route("/test",methods=["GET"])
 def test():
     try:
-        username = "m"
-        client = MongoClient()
-        db= client.naft
-        user = db.users.find_one({"username":username},{"username":1,"_id":0})
+        username = "a"
+        user = get_user(username)
         return jsonify({"user":dumps(user)})
     except Exception, e:
         return jsonify({"Error":str(e)})
