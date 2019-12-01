@@ -22,19 +22,22 @@ $(document).ready(function() {
     });
     $("#post").bind("click",function(e){
         console.log("posting...");
-        var content= $("#post_text").val(); 
+        var content= $("#post_text").val();
+        var media= $("#mid").html() 
         $.ajax({
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
-                "content":content
+                "content":content,
+                "media":[media]
             }),
             dataType: "json",
             url: "/additem",
             success: function(response){
                 if(response.status=="OK"){
-                    window.location.replace("/")
+                    //window.location.replace("/")
                     console.log("Added");
+                    console.log(response);
                 }
                 else{
                     console.log(response);
@@ -108,13 +111,14 @@ $(document).ready(function() {
             data: JSON.stringify({
                 "q":q,
                 "username":user,
-                "following":follow
+                "following":follow,
+                'rank':'time'
             }),
             dataType: "json",
             url: "/search",
             success: function(response){
-                showResults(response.items);
-                //console.log(response);
+                //showResults(response.items);
+                console.log(response);
                 //window.location.replace("/search/"+response.items);
             },
             error: function(e){
@@ -137,6 +141,68 @@ $(document).ready(function() {
                 console.log("Error: "+e);
             }
         });
+    });
+    $("#test").bind("click",function(e){
+        console.log("liking...");
+        $.ajax({
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                "like":true
+            }),
+            dataType: "json",
+            url: "/item/LZX2GpAEQt1575168736.0/like",
+            success: function(response){
+                console.log(response)
+            },
+            error: function(e){
+                console.log("Error: "+e);
+            }
+        });
+    });
+    $("#mediaSubmit").click(function (event) {
+
+        //stop submit the form, we will post it manually.
+        event.preventDefault();
+
+        // Get form
+        var form = $('#mediaform')[0];
+
+		// Create an FormData object 
+        var data = new FormData(form);
+
+		// If you want to add an extra field for the FormData
+        //data.append("CustomField", "This is some extra data, testing");
+
+		// disabled the submit button
+        $("#mediaSubmit").prop("disabled", true);
+
+        $.ajax({
+            type: "POST",
+            enctype: 'multipart/form-data',
+            data: data,
+            processData: false,
+            contentType: false,
+            cache: false,
+            timeout: 600000,
+            url: "/addmedia",
+            success: function (data) {
+
+                //$("#result").text(data);
+                console.log("SUCCESS : ", data);
+                $("#mediaSubmit").prop("disabled", false);
+                $("#mid").html(data.id)
+
+            },
+            error: function (e) {
+
+                $("#result").text(e.responseText);
+                console.log("ERROR : ", e);
+                $("#mediaSubmit").prop("disabled", false);
+
+            }
+        });
+
     });
 });
 

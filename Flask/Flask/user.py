@@ -21,26 +21,27 @@ def unverified():
 
 @user_api.route("/verify",methods=['POST','GET'])
 def verify():
-    try:
-	    email=""
-	    key=""
-	    if request.method == "POST":
-	        email= request.json.get("email",None)
-	        key= request.json.get("key",None)
-	    elif request.method =="GET":
-	        email= request.args.get("email")
-	        key=request.args.get("key")
+	try:
+		email=""
+		key=""
+		if request.method == "POST":
+			email= request.json.get("email",None)
+			key= request.json.get("key",None)
+		elif request.method =="GET":
+			email= request.args.get("email")
+			key=request.args.get("key")
 
-	    client= MongoClient()
-	    db = client.naft
+		client= MongoClient()
+		db = client.naft
 
-	    vuser= db.verified.find({"email":email})
-	    if vuser[0]['key']==key or key=="abracadabra":
-	        db.users.update_one({"email":email},{"$set":{"verified":"true"}})
-            return jsonify({"status":"OK"})
-	    return jsonify({"status":"ERROR"})
-    except Exception, e:
-	    return jsonify({"status":"ERROR","error":str(e)})
+		vuser= db.verified.find({"email":email})
+		if vuser[0]['key']==key or key=="abracadabra":
+			db.users.update_one({"email":email},{"$set":{"verified":"true"}})
+			return jsonify({"status":"OK"})
+		else:
+			return jsonify({"status":"error","error":"wrong key"}),401
+	except Exception, e:
+		return jsonify({"status":"error","error":str(e)}),409
 
 @user_api.route("/login",methods=["POST"])
 def login():
@@ -51,15 +52,16 @@ def login():
 
 	client = MongoClient()
 	db = client.naft
-	users = db.users.find({"username":username})
+	user = db.users.find_one({"username":username})
 
-        if users[0] is None:
-            return jsonify({"status":"ERROR","error":"User not found"})
-        if(users[0]['verified'] == "false"):
-	    return jsonify({"status":"ERROR","error":"Email has not been verified"})
+        if user is None:
+            return jsonify({"status":"error","error":"User not found"}),404
+        if(user['verified'] == "false"):
+	    return jsonify({"status":"error","error":"Email has not been verified"}),401
 
-	if not check_password_hash(users[0]['password'],password):
-            return jsonify({"status":"ERROR","error":"Username/Password incorrect"})
+	#if not check_password_hash(users[0]['password'],password):
+	if user['password'] != password:
+            return jsonify({"status":"error","error":"Username/Password incorrect"}),401
 
 	access_token = create_access_token(identity=username)
 	refresh_token = create_refresh_token(identity=username)
@@ -69,7 +71,7 @@ def login():
 	set_refresh_cookies(resp, refresh_token)
 	return resp, 200
     except Exception, e:
-	return jsonify({"status":"ERROR", "error":str(e)})
+	return jsonify({"status":"error", "error":str(e)}),409
 
 @user_api.route('/refresh', methods=['POST'])
 @jwt_refresh_token_required
@@ -87,4 +89,4 @@ def logout():
 		unset_jwt_cookies(resp)
 		return resp, 200
 	except Exception, e:
-		return jsonify({"status":"ERROR","error":str(e)})
+		return jsonify({"status":"error","error":str(e)}),409

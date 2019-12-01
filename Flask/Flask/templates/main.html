@@ -24,6 +24,9 @@
                             <input type="submit" value="Logout">
                         </form>-->
                    </div>
+                   <div class="menu_element" id="test">
+                        <h3><a >Test</a></h3>
+                   </div>
                </div> 
             </div>
 
@@ -36,6 +39,12 @@
                             <p id="count" style="float: left; margin: 0"></p>
                             <input type="submit" value="Post" style="float: right" id="post">
                         </div>
+                        <form method="POST" enctype="multipart/form-data" id="mediaform">
+                            Select image to upload:
+                            <input type="file" name="content" id="fileToUpload">
+                            <input type="submit" value="Upload Image" id="mediaSubmit">
+                            <span id="mid"></span>
+                        </form>
                 </div>
                 <div id="feed">
                     {% for item in items %}

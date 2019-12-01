@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, request, jsonify, redirect, json
+from flask import Flask, render_template, url_for, request, jsonify, redirect, json, abort, make_response
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.json_util import dumps
@@ -16,10 +16,13 @@ from flask_jwt_extended import (
 from werkzeug import generate_password_hash, check_password_hash, secure_filename
 from elasticsearch import Elasticsearch
 from gridfs import GridFS
+import mimetypes
+from itertools import imap
+from operator import itemgetter
 
 app = Flask(__name__)
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-#app.config['JWT_REFRESH_COOKIE_PATH'] = '/token/refresh'
+app.config['JWT_REFRESH_COOKIE_PATH'] = '/token/refresh'
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 app.config['JWT_SECRET_KEY'] = 'super-secret'
 jwt = JWTManager(app)
@@ -27,6 +30,7 @@ mail = Mail(app)
 es = Elasticsearch('http://localhost:9200')
 app.register_blueprint(user_api)
 fs = GridFS(MongoClient().naft)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg','mp4'}
 
 @app.route("/")
 @jwt_optional
@@ -53,6 +57,18 @@ def additem():
     media = request.json.get("media",None)
     ctime= time.time()
     mid = c_user+str(ctime)
+
+    client = MongoClient()
+    db= client.naft
+    if media:
+        for item in list(media):
+            if item != "":
+                m = db.media.find_one({"oid":item},{"oid":1,"_id":0})
+                if m and m['attatched'] == "false" and m['user']==c_user:
+                    db.media.update_one({"oid":item},{"$set":{"attatched":"true"}})
+                else:
+                    return jsonify({"status":"error","error":"Media Upload Not Allowed"}),409
+            
     item_json={
         "id":mid,
         "username":c_user,
@@ -70,55 +86,72 @@ def additem():
         q = {
                 "script": {
                     "inline": "ctx._source.retweeted+=1"
-                },
-                "query": {
-                    "match": {
-                        "id": parent
-                    }
                 }
         }
-        es.update(body=q, doc_type='post', index='posts')
+        es.update(index='posts',id=parent,body=q)
     
     es.index(index="posts",id=mid,doc_type="post",body=item_json)
     db.users.update_one({"username":c_user},{"$push":{"posts":mid}})
     return jsonify({"status":"OK","id":mid})
 
 @app.route("/item/<mid>", methods=["GET","DELETE"])
+@jwt_optional
 def getitem(mid):
     try:
+        item = es.get(index="posts",doc_type='post',id=mid)
         if(request.method == 'DELETE'):
-            es.delete(index="posts",doc_type="post",id=mid)
-            return jsonify({"status":"OK"})
+            user =  get_jwt_identity()
+            if user:
+                client = MongoClient()
+                db= client.naft
+                if mid in db.users.find_one({"username":user})['posts']:
+                    media = item['_source']['media']
+                    if media != None:
+                        for m in media:
+                            iid = db.fs.files.find_one({"oid":m})['_id']
+                            fs.delete(iid)
+                    es.delete(index="posts",doc_type="post",id=mid)
+                    return jsonify({"status":"OK"})
+                else:
+                    return jsonify({"status":"error","error":"User does not own post"}),401
+            else:
+                return jsonify({"status":"error","error":"User is not logged in"}),401
         else:
-            item = es.get(index="posts",doc_type='post',id=mid)
+            #item = es.get(index="posts",doc_type='post',id=mid)
             return jsonify({"status":"OK","item":item['_source']})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/item/<mid>/like",methods=["POST"])
+@jwt_required
 def likeitem(mid):
+    user = get_jwt_identity()
     try:
         like= request.json.get("like",bool)
+        client = MongoClient()
+        db= client.naft
         if like == None:
             like = True
         if like ==True:
+            if mid in db.users.find_one({"username":user})['likes']:
+                return jsonify({"status":"OK"})
             line="ctx._source.property.likes+=1"
-        else:
-            line = "ctx._source.property.likes+=1"
+            db.users.update_one({"username":user},{"$push":{"likes":mid}})
+        elif like == False:
+            if mid in db.users.find_one({"username":user})['likes']:
+                line="ctx._source.property.likes-=1"
+                db.users.update_one({"username":user},{"$pull":{"likes":mid}})
+            else:
+                return jsonify({"status":"OK"})
         q = {
                 "script": {
                     "inline": line
-                },
-                "query": {
-                    "match": {
-                        "id": mid
-                    }
                 }
         }
-        es.update(body=q, doc_type='post', index='posts')
+        es.update(index='posts',id=mid,body=q)
         return jsonify({"status":"OK"})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
 
 
 @app.route("/user/<username>",methods=["GET"])
@@ -128,10 +161,10 @@ def getUser(username):
         db= client.naft
         user= db.users.find_one({"username":username})
         if user is None:
-            return jsonify({"status":"error","error":"User not found"})
+            return jsonify({"status":"error","error":"User not found"}),404
         return jsonify({"status":"OK","user":{"email":user['email'],"followers":len(user['followers']),"following":len(user['following'])}})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)})
 
 @app.route("/user/<username>/posts",methods=["GET"])
 def getUserPosts(username):
@@ -149,7 +182,7 @@ def getUserPosts(username):
         posts= user['posts'][:limit]
         return jsonify({"status":"OK","items":posts})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/user/<username>/followers",methods=["GET"])
 def getUserFollowers(username):
@@ -167,7 +200,7 @@ def getUserFollowers(username):
         users= user['followers'][:limit]
         return jsonify({"status":"OK","users":users})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)})
 
 @app.route("/user/<username>/following",methods=["GET"])
 def getUserFollowing(username):
@@ -185,7 +218,7 @@ def getUserFollowing(username):
         users= user['following'][:limit]
         return jsonify({"status":"OK","users":users})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/follow",methods=["POST"])
 @jwt_required
@@ -200,9 +233,9 @@ def follow():
             user1= db.users.find_one({"username":username})
             user2= db.users.find_one({"username":user})
             if user1 is None:
-                return jsonify({"status":"error","error":"User1 not found","user":username})
+                return jsonify({"status":"error","error":"User1 not found","user":username}),404
             if user2 is None:
-                return jsonify({"status":"error","error":"User2 Not Found"})
+                return jsonify({"status":"error","error":"User2 Not Found"}),404
             if(follow ==  True):
                 db.users.update_one({"username":user},{"$push":{"following":username}})
                 db.users.update_one({"username":username},{"$push":{"followers":user}})
@@ -212,7 +245,7 @@ def follow():
                 db.users.update_one({"username":username},{"$pull":{"followers":user}})
             return jsonify({"status":"OK"})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/user/<username>/show")
 @jwt_optional
@@ -241,7 +274,7 @@ def getusername():
         username = get_jwt_identity()
         return jsonify({"status":"OK","user":username})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
 
 @app.route("/adduser",methods=['POST'])
 def addusr():
@@ -250,15 +283,18 @@ def addusr():
 	password=request.json.get("password",None)
 	email=request.json.get("email",None)
 
-        hashed_password= generate_password_hash(password)
+        #hashed_password= generate_password_hash(password)
 
         client = MongoClient()
         db= client.naft
-
+        if db.users.find_one({"username":name},{"username":1,"_id":0}) != None:
+            return jsonify({"status":"error","error":"Username taken"}),409
+        if db.users.find_one({"email":email},{"email":1,"_id":0}) != None:
+            return jsonify({"status":"error","error":"Email already in use"}),409
         json={
             "username":name,
             "email":email,
-            "password":hashed_password,
+            "password":password,
             "posts":[],
             "likes":[],
             "reposts":[],
@@ -278,10 +314,10 @@ def addusr():
         msg= Message(subject="Verify Email",body=body,sender="ubuntu@wu1.cloud.compas.cs",recipients=[email])
         mail.send(msg)
 
-        # redirect to verification page and return status: OK
+        #return status: OK
         return jsonify({"status":"OK"})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)}) # return status: ERROR if there is an exception
+        return jsonify({"status":"error","error":str(e)}),409 # return status: error if there is an exception
 
 @app.route("/search",methods=["POST"])
 @jwt_optional
@@ -292,23 +328,41 @@ def search():
         q = request.json.get('q',None)
         username = request.json.get('username',None)
         following = request.json.get('following',bool)
-        query = {"query":{'bool':{'must':[]}}}
-        fusers=[]
+        rank = request.json.get('rank',None)
+        parent = request.json.get('parent',None)
+        replies = request.json.get('replies',bool)
+        hasMedia = request.json.get('hasMedia',bool)
+        
+
+        query = {"query":{'bool':{'must':[],'must_not':[],'filter':[]}},'sort':[]}
         if str(q) != "":
             query['query']['bool']['must'].append({'match':{'content':q}})
-        else:
-            query['query']['bool']['must'].append({'match_all':{}})
+        #else:
+        #    query['query']['bool']['must'].append({'match_all':{}})
+
         if timestamp:
             query['query']['bool']['must'].append({'range':{'timestamp':{'lte':timestamp}}})
         if username:
-            query['query']['bool']['must'].append({'match':{'username':username}})
+            query['query']['bool']['filter'].append({'match':{'username':username}})
         if following == True:
+            fusers=[]
             client = MongoClient()
             db = client.naft
             if get_jwt_identity():
                 user = db.users.find_one({"username":get_jwt_identity()})
                 fusers= user['following']
-                query['query']['bool']['must'].append({'terms':{'username':fusers}})
+                query['query']['bool']['filter'].append({'match':{'username':fusers}})
+        
+        
+        if rank != 'time':
+            query['sort'].append({'_script':{"type":"number","script":" return doc['retweeted'].value + doc['property.likes'].value","order":'desc'}})
+        if replies == False:
+            query['query']['bool']['must_not'].append({'match':{'childType':'reply'}})
+        if parent:
+            if replies != False:
+                query['query']['bool']['filter'].append({'match':{'parent':parent}})
+        if hasMedia and hasMedia == True:
+            query['query']['bool']['filter'].append({'exists':{'field':"media"}})
         if limit:
             if limit > 100:
                 search = es.search(index="posts",body=query, size=100)
@@ -319,10 +373,19 @@ def search():
         posts=[]
         for item in search['hits']['hits']:
             posts.append(item['_source'])
+        if rank == 'time':
+            #query['sort'].append({"timestamp":{'order':'desc'}})
+            posts.sort(key=etimestamp,reverse=True)
 
-        return jsonify({"status":"OK","items":posts,"q":query,"following":following})
+        return jsonify({"status":"OK","items":posts,"q":query})
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
+def etimestamp(json):
+    try:
+        return float(json['timestamp'])
+    except KeyError:
+        return 0
+
 
 def getfeed():
     #client = MongoClient()
@@ -374,7 +437,7 @@ def truncate(n, decimals=0):
 
 @app.errorhandler(401)
 def custom_401(error):
-    return "hi this is a 401 error"
+    return jsonify({"status":"error","error":"User must log in"}),401
 
 # Using the expired_token_loader decorator, we will now call
 # this function whenever an expired but otherwise valid access
@@ -382,11 +445,15 @@ def custom_401(error):
 @jwt.expired_token_loader
 def my_expired_token_callback():
 	try:
-		resp = jsonify({"status":"OK","msg":"User was logged out"})
+		resp = jsonify({"status":"error","error":"User was logged out"})
 		unset_jwt_cookies(resp)
 		return resp, 200
 	except Exception, e:
-		return jsonify({"status":"ERROR","error":str(e)})
+		return jsonify({"status":"error","error":str(e)}),401
+@jwt.unauthorized_loader
+def my_unauthorized_loader_callback(callback):
+    return jsonify({"status":"error","error":"User not logged in"}),401
+
 
 @app.route("/reset",methods=["GET"])
 def reset():
@@ -397,34 +464,60 @@ def reset():
     db.verified.drop()
     es.indices.delete(index="posts",ignore=[400,404])
     es.indices.create(index="posts",ignore=400)
+    db.fs.files.drop()
     return jsonify({"status":"OK"})
 
 
 @app.route("/addmedia",methods=["POST"])
+@jwt_required
 def addmedia():
     try:
-        file=request.files['content']
-        if file:
+        c_user = get_jwt_identity()
+        if 'content' not in request.files:
+            return jsonify({"status":"error","error":"no content provided"}),409
+        file = request.files['content']
+        if not file.filename:
+            return jsonify({"status":"error","error":"no filename provided"}),409
+        if file and allowed_file(file.filename) and c_user:
             filename= secure_filename(file.filename)
             oid = c_user+str(time.time())
             fs.put(file, content_type=file.content_type, filename=filename,oid=oid)
-            return jsonify({"status":"OK","oid":oid})
+            client = MongoClient()
+            db= client.naft
+            db.media.insert_one({"user":c_user,"oid":oid,"attatched":"false"})
+            return jsonify({"status":"OK","id":oid})
+        else:
+            return jsonify({"status":"error","error":"file type not allowed"}),405
     except Exception, e:
-        return jsonify({"status":"ERROR","error":str(e)})
+        return jsonify({"status":"error","error":str(e)}),409
 
 
-@app.route("/media/<id>", methods=["GET"])
+@app.route("/media/<oid>", methods=["GET"])
 def getmedia(oid):
     try:
         file = fs.find_one({"oid":oid})
         response = make_response(file.read())
         response.mimetype = file.content_type
         return response, 200
-    except Exception, e:
-        return 404
+    except:
+        return jsonify({"status":"error","error":"file not found"}),404
     
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+@app.route("/test",methods=["GET"])
+def test():
+    try:
+        username = "m"
+        client = MongoClient()
+        db= client.naft
+        user = db.users.find_one({"username":username},{"username":1,"_id":0})
+        return jsonify({"user":dumps(user)})
+    except Exception, e:
+        return jsonify({"Error":str(e)})
 
 
 
