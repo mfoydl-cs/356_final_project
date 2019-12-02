@@ -109,10 +109,7 @@ $(document).ready(function() {
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
-                "q":q,
-                "username":user,
-                "following":follow,
-                'rank':'time'
+                "limit":45
             }),
             dataType: "json",
             url: "/search",

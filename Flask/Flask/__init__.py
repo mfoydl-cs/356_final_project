@@ -1,4 +1,5 @@
 from flask import Flask, render_template, url_for, request, jsonify, redirect, json, abort, make_response
+import pymongo
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.json_util import dumps
@@ -14,11 +15,14 @@ from flask_jwt_extended import (
     set_refresh_cookies, unset_jwt_cookies, jwt_optional
 )
 from werkzeug import generate_password_hash, check_password_hash, secure_filename
-from elasticsearch import Elasticsearch
+import elasticsearch
+from elasticsearch import Elasticsearch, RequestsHttpConnection, serializer, compat, exceptions
 from gridfs import GridFS
 import mimetypes
-from pymemcache.client import base
-from pymemcache import fallback
+import logging
+
+
+from werkzeug.contrib.profiler import ProfilerMiddleware
 
 app = Flask(__name__)
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
@@ -27,15 +31,18 @@ app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 app.config['JWT_SECRET_KEY'] = 'super-secret'
 jwt = JWTManager(app)
 mail = Mail(app)
-es = Elasticsearch('http://localhost:9200')
+
 app.register_blueprint(user_api)
 fs = GridFS(MongoClient().naft)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg','mp4'}
-#old_cache = base.Client(('localhost', 11211), ignore_exc=True)
-#new_cache = base.Client(('localhost', 11212))
 
-#mclient = fallback.FallbackClient((new_cache, old_cache))
-mc = base.Client(('127.0.0.1',11211))
+#app.config['DEBUG'] = True
+#app.config['PROFILE'] = True
+#app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[800])
+
+client = MongoClient('localhost',27017,maxPoolSize=100)
+
+es = Elasticsearch('http://localhost:9200')
 
 @app.route("/")
 @jwt_optional
@@ -43,14 +50,16 @@ def home():
     #try:
     c_user= get_jwt_identity()
     if c_user:
-        client = MongoClient()
+        #client = MongoClient()
         db= client.naft
         #items = db.items.find()
         return render_template('main.html',items=getfeed())
     else:
-        return render_template('login.html')
+        return render_template('all.html')
     #except Exception as e:
-
+@app.route("/loginpage")
+def loginpage():
+    return render_template('login.html')
 
 @app.route("/additem",methods=["POST"])
 @jwt_required
@@ -62,13 +71,13 @@ def additem():
     media = request.json.get("media",None)
     ctime= time.time()
     mid = c_user+str(ctime)
-
-    client = MongoClient()
+    mid = mid.replace(".","_")
+    
     db= client.naft
     if media:
         for item in list(media):
             if item != "":
-                m = db.media.find_one({"oid":item},{"oid":1,"_id":0})
+                m = db.media.find_one({"oid":item})
                 if m and m['attatched'] == "false" and m['user']==c_user:
                     db.media.update_one({"oid":item},{"$set":{"attatched":"true"}})
                 else:
@@ -98,7 +107,7 @@ def additem():
         es.update(index='posts',id=parent,body=q)
     
     #SEND POST TO ASYNC
-    es.index(index="posts",id=mid,doc_type="post",body=item_json)
+    es.index(index="posts",id=mid,body=item_json)
     db.users.update_one({"username":c_user},{"$push":{"posts":mid}})
 
     return jsonify({"status":"OK","id":mid})
@@ -107,11 +116,11 @@ def additem():
 @jwt_optional
 def getitem(mid):
     try:
-        item = es.get(index="posts",doc_type='post',id=mid)
+        item = es.get(index="posts",id=mid)
         if(request.method == 'DELETE'):
             user =  get_jwt_identity()
             if user:
-                client = MongoClient()
+                #client = MongoClient()
                 db= client.naft
                 if mid in db.users.find_one({"username":user})['posts']:
                     media = item['_source']['media']
@@ -119,7 +128,7 @@ def getitem(mid):
                         for m in media:
                             iid = db.fs.files.find_one({"oid":m})['_id']
                             fs.delete(iid)
-                    es.delete(index="posts",doc_type="post",id=mid)
+                    es.delete(index="posts",id=mid)
                     return jsonify({"status":"OK"})
                 else:
                     return jsonify({"status":"error","error":"User does not own post"}),401
@@ -137,7 +146,7 @@ def likeitem(mid):
     user = get_jwt_identity()
     try:
         like= request.json.get("like",bool)
-        client = MongoClient()
+        #client = MongoClient()
         db= client.naft
         if like == None:
             like = True
@@ -166,7 +175,7 @@ def likeitem(mid):
 @app.route("/user/<username>",methods=["GET"])
 def getUser(username):
     try:
-        client = MongoClient()
+        #client = MongoClient()
         db= client.naft
         user= db.users.find_one({"username":username})
         if user is None:
@@ -185,7 +194,7 @@ def getUserPosts(username):
                 limit = 200
         else:
             limit = 50
-        client = MongoClient()
+        #client = MongoClient()
         db = client.naft
         user = db.users.find_one({"username":username})
         posts= user['posts'][:limit]
@@ -203,7 +212,7 @@ def getUserFollowers(username):
                 limit = 200
         else:
             limit = 50
-        client = MongoClient()
+        #client = MongoClient()
         db = client.naft
         user = db.users.find_one({"username":username})
         users= user['followers'][:limit]
@@ -221,7 +230,7 @@ def getUserFollowing(username):
                 limit = 200
         else:
             limit = 50
-        client = MongoClient()
+        #client = MongoClient()
         db = client.naft
         user = db.users.find_one({"username":username})
         users= user['following'][:limit]
@@ -237,7 +246,7 @@ def follow():
         username= request.json.get("username",None)
         follow= request.json.get("follow",bool)
         if(username):
-            client = MongoClient()
+            #client = MongoClient()
             db = client.naft
             user1= db.users.find_one({"username":username})
             user2= db.users.find_one({"username":user})
@@ -262,7 +271,7 @@ def showUser(username):
     query = {"query":{'match':{'username':username}}}
     search = es.search(index="posts",body=query, size=25)
     items = getPosts(search)
-    client = MongoClient()
+    #client = MongoClient()
     db = client.naft
     user= get_jwt_identity()
     follow=False
@@ -294,7 +303,7 @@ def addusr():
 
         #hashed_password= generate_password_hash(password)
 
-        client = MongoClient()
+        #client = MongoClient('localhost',27017,maxPoolSize=100)
         db= client.naft
         if db.users.find_one({"username":name},{"username":1,"_id":0}) != None:
             return jsonify({"status":"error","error":"Username taken"}),409
@@ -348,10 +357,10 @@ def search():
         
 
         query = {"query":{'bool':{'must':[],'must_not':[],'filter':[]}},'sort':[]}
-        if str(q) != "":
+        if q and str(q) != "":
             query['query']['bool']['must'].append({'match':{'content':q}})
-        #else:
-        #    query['query']['bool']['must'].append({'match_all':{}})
+        else:
+            query['query']['bool']['must'].append({'match_all':{}})
 
         if timestamp:
             query['query']['bool']['must'].append({'range':{'timestamp':{'lte':timestamp}}})
@@ -359,7 +368,7 @@ def search():
             query['query']['bool']['filter'].append({'match':{'username':username}})
         if following == True:
             fusers=[]
-            client = MongoClient()
+            #client = MongoClient()
             db = client.naft
             if get_jwt_identity():
                 user = db.users.find_one({"username":get_jwt_identity()})
@@ -391,7 +400,11 @@ def search():
             posts.sort(key=etimestamp,reverse=True)
 
         return jsonify({"status":"OK","items":posts,"q":query})
+    except elasticsearch.RequestError as es1:
+        return jsonify({"status":"OK","items":[]})
+
     except Exception as e:
+        app.logger.error('    SearchError:   '+str(e))
         return jsonify({"status":"error","error":str(e)}),409
 def etimestamp(json):
     try:
@@ -470,15 +483,35 @@ def my_unauthorized_loader_callback(callback):
 
 @app.route("/reset",methods=["GET"])
 def reset():
-    client = MongoClient()
+    #client = MongoClient()
     db= client.naft
 
     db.users.drop()
     db.verified.drop()
     es.indices.delete(index="posts",ignore=[400,404])
-    es.indices.create(index="posts",ignore=400)
+    
     db.fs.files.drop()
-    return jsonify({"status":"OK"})
+
+    db.users.create_index([('username', pymongo.ASCENDING)],unique=True)
+    db.media.create_index([('oid', pymongo.ASCENDING)],unique=True)
+    mapping={
+        "mappings": {
+            "properties":{
+                "id":{"type":"keyword"},
+                "username":{"type":"keyword"},
+                
+                "retweeted":{"type":"integer"},
+                "content":{"type":"text"},
+                "childType":{"type":"keyword"},
+                "parent":{"type":"keyword"},
+                "media":{"type":"keyword"},
+                "timestamp":{"type":"float"},
+                "property":{"type":"object","properties":{"likes":{"type":"integer"}}}
+            }
+        }
+    }
+    response = es.indices.create(index="posts",body=mapping,ignore=400)
+    return jsonify({"status":"OK","response":response})
 
 
 @app.route("/addmedia",methods=["POST"])
@@ -495,7 +528,7 @@ def addmedia():
             filename= secure_filename(file.filename)
             oid = c_user+str(time.time())
             fs.put(file, content_type=file.content_type, filename=filename,oid=oid)
-            client = MongoClient()
+            #client = MongoClient()
             db= client.naft
             db.media.insert_one({"user":c_user,"oid":oid,"attatched":"false"})
             return jsonify({"status":"OK","id":oid})
@@ -525,7 +558,7 @@ def get_user(username):
         #result,cas = mclient.get(username)
     result = mc.get(username)
     if result == "None":
-        client = MongoClient()
+        #client = MongoClient()
         db= client.naft
         result = db.users.find_one({"username":username},{"username":1,"_id":0})
         mc.set(username,result)
@@ -538,11 +571,12 @@ def get_user(username):
 @app.route("/test",methods=["GET"])
 def test():
     try:
-        username = "m"
-        user = get_user(username)
-        return jsonify({"user":dumps(user)})
+        app.logger.error('TestLog'+str(5))
+        return jsonify({"status":"OK"})
     except Exception as e:
         return jsonify({"Error":str(e)})
+
+
 
 
 
