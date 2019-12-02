@@ -13,7 +13,7 @@ user_api = Blueprint('user_api','user_api')
 
 @user_api.route("/createuser",methods=['GET'])
 def createuser():
-    return render_template('createuser.html')
+	return render_template('createuser.html')
 
 @user_api.route("/unverified")
 def unverified():
@@ -40,38 +40,38 @@ def verify():
 			return jsonify({"status":"OK"})
 		else:
 			return jsonify({"status":"error","error":"wrong key"}),401
-	except Exception, e:
+	except Exception as e:
 		return jsonify({"status":"error","error":str(e)}),409
 
 @user_api.route("/login",methods=["POST"])
 def login():
-    #check_password_hash(saved,input)
-    try:
-	username = request.json.get("username",None)
-	password = request.json.get("password",None)
+	#check_password_hash(saved,input)
+	try:
+		username = request.json.get("username",None)
+		password = request.json.get("password",None)
 
-	client = MongoClient()
-	db = client.naft
-	user = db.users.find_one({"username":username})
+		client = MongoClient()
+		db = client.naft
+		user = db.users.find_one({"username":username})
 
-        if user is None:
-            return jsonify({"status":"error","error":"User not found"}),404
-        if(user['verified'] == "false"):
-	    return jsonify({"status":"error","error":"Email has not been verified"}),401
+		if user is None:
+			return jsonify({"status":"error","error":"User not found"}),404
+		if(user['verified'] == "false"):
+			return jsonify({"status":"error","error":"Email has not been verified"}),401
 
 	#if not check_password_hash(users[0]['password'],password):
-	if user['password'] != password:
-            return jsonify({"status":"error","error":"Username/Password incorrect"}),401
+		if user['password'] != password:
+			return jsonify({"status":"error","error":"Username/Password incorrect"}),401
 
-	access_token = create_access_token(identity=username)
-	refresh_token = create_refresh_token(identity=username)
+		access_token = create_access_token(identity=username)
+		refresh_token = create_refresh_token(identity=username)
 
-	resp = jsonify({"status":"OK"})
-	set_access_cookies(resp, access_token)
-	set_refresh_cookies(resp, refresh_token)
-	return resp, 200
-    except Exception, e:
-	return jsonify({"status":"error", "error":str(e)}),409
+		resp = jsonify({"status":"OK"})
+		set_access_cookies(resp, access_token)
+		set_refresh_cookies(resp, refresh_token)
+		return resp, 200
+	except Exception as e:
+		return jsonify({"status":"error", "error":str(e)}),409
 
 @user_api.route('/refresh', methods=['POST'])
 @jwt_refresh_token_required
@@ -88,5 +88,5 @@ def logout():
 		resp = jsonify({"status":"OK"})
 		unset_jwt_cookies(resp)
 		return resp, 200
-	except Exception, e:
+	except Exception as e:
 		return jsonify({"status":"error","error":str(e)}),409

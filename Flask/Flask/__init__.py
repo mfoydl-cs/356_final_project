@@ -22,7 +22,7 @@ import mimetypes
 import logging
 
 
-from werkzeug.contrib.profiler import ProfilerMiddleware
+#from werkzeug.contrib.profiler import ProfilerMiddleware
 
 app = Flask(__name__)
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
