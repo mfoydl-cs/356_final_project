@@ -33,7 +33,7 @@ jwt = JWTManager(app)
 mail = Mail(app)
 
 app.register_blueprint(user_api)
-fs = GridFS(MongoClient().naft)
+fs = GridFS(MongoClient('localhost',27017,maxPoolSize=100).media)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg','mp4'}
 
 #app.config['DEBUG'] = True
@@ -53,7 +53,7 @@ def home():
         #client = MongoClient()
         db= client.naft
         #items = db.items.find()
-        return render_template('main.html',items=getfeed())
+        return render_template('main.html',items=[])
     else:
         return render_template('all.html')
     #except Exception as e:
